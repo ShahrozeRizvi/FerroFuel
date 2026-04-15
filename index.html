@@ -614,7 +614,9 @@ function checkSavedPlans() {
   const saved = getSavedPlans();
   const wrap = document.getElementById('savedPlansBtnWrap');
   if (saved.length > 0) {
-    wrap.innerHTML = `<button class="btn-secondary" onclick="showSavedPlans()">View my saved plan (${saved.length})</button>`;
+    wrap.innerHTML = `
+      <button class="btn-secondary" onclick="startOnboarding()">View my saved plan →</button>
+      <button class="btn-back" style="align-self:center;font-size:13px;color:var(--mid-gray);" onclick="clearAndRestart()">✕ Clear saved plan & start fresh</button>`;
   }
 }
 
@@ -670,7 +672,8 @@ function updateProgress(screenId) {
 function startOnboarding() {
   const saved = getSavedPlans();
   if (saved.length >= 1) {
-    showScreen('screen-saved');
+    // Auto-load the most recent plan directly
+    loadSavedPlan(saved.length - 1);
     return;
   }
   showScreen('screen-step1');
@@ -1123,10 +1126,9 @@ function loadSavedPlan(idx) {
 }
 
 function clearAndRestart() {
-  if (confirm('This will clear your saved plan so you can generate a new one. Continue?')) {
-    localStorage.removeItem('ferrofuel_plans');
-    location.reload();
-  }
+  localStorage.removeItem('ferrofuel_plans');
+  showScreen('screen-step1');
+  checkSavedPlans();
 }
 
 // ============================================================
