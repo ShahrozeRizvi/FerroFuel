@@ -402,6 +402,17 @@
         <input type="number" id="f_weight" placeholder="70" min="40" max="150" />
       </div>
     </div>
+    <div class="field">
+      <label>Activity level</label>
+      <select id="f_activity">
+        <option value="">Select...</option>
+        <option value="1.2">Sedentary — desk job, little or no exercise</option>
+        <option value="1.375">Lightly active — exercise 1–3 days/week</option>
+        <option value="1.55">Moderately active — exercise 3–5 days/week</option>
+        <option value="1.725">Very active — hard exercise 6–7 days/week</option>
+      </select>
+      <div class="field-hint">Used to calculate your accurate daily calorie target</div>
+    </div>
     <div id="step1-error" class="error-box" style="display:none;"></div>
     <button class="btn-primary" onclick="goStep2()">Continue →</button>
   </div>
@@ -572,7 +583,7 @@
 // ============================================================
 const state = {
   step: 1,
-  name: '', age: 0, height: 0, weight: 0, goal: '',
+  name: '', age: 0, height: 0, weight: 0, goal: '', activity: 1.375,
   disliked: new Set(),
   allergens: new Set(),
   ironSupp: false, ironSuppName: '',
@@ -687,6 +698,7 @@ function goStep2() {
   const height = parseInt(document.getElementById('f_height').value);
   const weight = parseInt(document.getElementById('f_weight').value);
   const goal = document.getElementById('f_goal').value;
+  const activity = parseFloat(document.getElementById('f_activity').value);
   const err = document.getElementById('step1-error');
 
   if (!name) { err.textContent = 'Please enter your name.'; err.style.display='block'; return; }
@@ -694,9 +706,11 @@ function goStep2() {
   if (!height || height < 140 || height > 200) { err.textContent = 'Please enter a valid height in cm (140–200).'; err.style.display='block'; return; }
   if (!weight || weight < 40 || weight > 150) { err.textContent = 'Please enter a valid weight in kg (40–150).'; err.style.display='block'; return; }
   if (!goal) { err.textContent = 'Please select your goal.'; err.style.display='block'; return; }
+  if (!activity) { err.textContent = 'Please select your activity level.'; err.style.display='block'; return; }
 
   err.style.display = 'none';
-  state.name = name; state.age = age; state.height = height; state.weight = weight; state.goal = goal;
+  state.name = name; state.age = age; state.height = height;
+  state.weight = weight; state.goal = goal; state.activity = activity;
   showScreen('screen-step2');
 }
 
@@ -716,16 +730,23 @@ function toggleSwitch(key) {
 // MACRO CALCULATOR
 // ============================================================
 function calcMacros() {
-  const { age, height, weight, goal } = state;
+  const { age, height, weight, goal, activity } = state;
+  // Mifflin-St Jeor BMR for women
   const bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-  const tdee = Math.round(bmr * 1.4);
+  // TDEE using user-selected activity multiplier
+  const tdee = Math.round(bmr * (activity || 1.375));
+  // Calorie target based on goal
   let kcal;
-  if (goal === 'loss') kcal = tdee - 600;
-  else if (goal === 'gain') kcal = tdee + 200;
+  if (goal === 'loss') kcal = Math.max(1200, tdee - 600);
+  else if (goal === 'gain') kcal = tdee + 250;
   else kcal = tdee;
-  kcal = Math.max(1200, Math.min(1800, Math.round(kcal)));
-  const protein = goal === 'loss' ? Math.min(110, Math.round(weight * 1.2)) : Math.round(weight * 1.6);
-  const fat = Math.round(kcal * 0.25 / 9);
+  kcal = Math.round(kcal);
+  // Protein: 1.8g/kg for loss (preserve muscle), 2.0g/kg for gain, 1.6 maintenance. Cap 180g.
+  const proteinPerKg = goal === 'gain' ? 2.0 : goal === 'loss' ? 1.8 : 1.6;
+  const protein = Math.min(180, Math.round(weight * proteinPerKg));
+  // Fat: 28% of calories
+  const fat = Math.round(kcal * 0.28 / 9);
+  // Carbs: remainder, minimum 80g
   const carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
   return { kcal, protein, fat, carbs };
 }
@@ -944,6 +965,14 @@ function buildPrompt(macros) {
   const goalMap = { loss: 'weight loss', maintenance: 'weight maintenance', gain: 'muscle gain' };
   const suppName = state.ironSuppName || 'iron supplement';
 
+  const activityLabels = {
+    '1.2': 'Sedentary (desk job, little exercise)',
+    '1.375': 'Lightly active (1–3 days/week exercise)',
+    '1.55': 'Moderately active (3–5 days/week exercise)',
+    '1.725': 'Very active (6–7 days/week exercise)'
+  };
+  const activityLabel = activityLabels[String(state.activity)] || 'Lightly active';
+
   return `Create a personalised iron-rich diet plan for this woman:
 
 PROFILE:
@@ -951,6 +980,7 @@ PROFILE:
 - Age: ${state.age} years
 - Height: ${state.height} cm | Weight: ${state.weight} kg
 - Goal: ${goalMap[state.goal]}
+- Activity level: ${activityLabel}
 - Daily targets: ${macros.kcal} kcal / ${macros.protein}g protein / ${macros.carbs}g carbs / ${macros.fat}g fat
 
 FOODS TO AVOID (disliked — never include): ${dislikedList}
@@ -993,9 +1023,11 @@ Return ONLY the JSON object. No markdown. No explanation. No code fences.`;
 // ============================================================
 function renderPlan(plan, macros) {
   // Header
+  const activityShort = { '1.2': 'Sedentary', '1.375': 'Lightly active', '1.55': 'Moderately active', '1.725': 'Very active' };
+  const actLabel = activityShort[String(state.activity)] || 'Active';
   document.getElementById('planHeader').innerHTML = `
     <div class="plan-name">${state.name}'s Iron Diet Plan</div>
-    <div class="plan-meta">${state.goal === 'loss' ? 'Weight loss' : state.goal === 'gain' ? 'Muscle gain' : 'Maintenance'} • Generated ${new Date().toLocaleDateString()}</div>
+    <div class="plan-meta">${state.goal === 'loss' ? 'Weight loss' : state.goal === 'gain' ? 'Muscle gain' : 'Maintenance'} · ${actLabel} · Generated ${new Date().toLocaleDateString()}</div>
     <div class="plan-macros">
       <div class="plan-macro"><div class="plan-macro-val">${macros.kcal}</div><div class="plan-macro-label">kcal</div></div>
       <div class="plan-macro"><div class="plan-macro-val">${macros.protein}g</div><div class="plan-macro-label">protein</div></div>
@@ -1090,7 +1122,17 @@ function getSavedPlans() {
 
 function savePlan(planData) {
   const saved = getSavedPlans();
-  saved.push(planData);
+  // Serialise Sets to arrays before storing — JSON.stringify drops Sets silently
+  const serialisable = {
+    ...planData,
+    user: {
+      ...planData.user,
+      disliked: Array.from(planData.user.disliked || []),
+      allergens: Array.from(planData.user.allergens || []),
+      conditions: Array.from(planData.user.conditions || [])
+    }
+  };
+  saved.push(serialisable);
   localStorage.setItem('ferrofuel_plans', JSON.stringify(saved));
 }
 
@@ -1115,12 +1157,24 @@ function showSavedPlans() {
 function loadSavedPlan(idx) {
   const saved = getSavedPlans();
   const p = saved[idx];
-  Object.assign(state, p.user);
+  // Restore all scalar state explicitly
+  state.name = p.user.name || '';
+  state.age = p.user.age || 0;
+  state.height = p.user.height || 0;
+  state.weight = p.user.weight || 0;
+  state.goal = p.user.goal || '';
+  state.activity = p.user.activity || 1.375;
+  state.ironSupp = p.user.ironSupp || false;
+  state.ironSuppName = p.user.ironSuppName || '';
+  state.calcium = p.user.calcium || false;
+  state.antacid = p.user.antacid || false;
+  state.veg = p.user.veg || false;
+  // Restore Sets from arrays (Sets don't survive JSON serialisation)
+  state.disliked = new Set(Array.isArray(p.user.disliked) ? p.user.disliked : []);
+  state.allergens = new Set(Array.isArray(p.user.allergens) ? p.user.allergens : []);
+  state.conditions = new Set(Array.isArray(p.user.conditions) ? p.user.conditions : []);
   state.plan = p.plan;
   state.macros = p.macros;
-  state.disliked = new Set(p.user.disliked || []);
-  state.allergens = new Set(p.user.allergens || []);
-  state.conditions = new Set(p.user.conditions || []);
   renderPlan(p.plan, p.macros);
   showScreen('screen-plan');
 }
@@ -1128,7 +1182,8 @@ function loadSavedPlan(idx) {
 function clearAndRestart() {
   localStorage.removeItem('ferrofuel_plans');
   // Reset all state
-  state.name = ''; state.age = 0; state.height = 0; state.weight = 0; state.goal = '';
+  state.name = ''; state.age = 0; state.height = 0; state.weight = 0;
+  state.goal = ''; state.activity = 1.375;
   state.disliked = new Set();
   state.allergens = new Set();
   state.conditions = new Set();
@@ -1140,7 +1195,7 @@ function clearAndRestart() {
   document.querySelectorAll('.toggle-switch').forEach(t => t.classList.remove('on'));
   document.getElementById('iron-supp-expand').classList.remove('visible');
   document.getElementById('f_iron_supp').value = '';
-  // Reinitialise chips so they're clickable again
+  // Reinitialise chips
   renderChips('chips-proteins', foodChips.proteins, 'disliked');
   renderChips('chips-carbs', foodChips.carbs, 'disliked');
   renderChips('chips-veg', foodChips.veg, 'disliked');
@@ -1150,6 +1205,7 @@ function clearAndRestart() {
   // Reset form fields
   ['f_name','f_age','f_height','f_weight'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f_goal').value = '';
+  document.getElementById('f_activity').value = '';
   document.getElementById('step1-error').style.display = 'none';
   checkSavedPlans();
   showScreen('screen-step1');
