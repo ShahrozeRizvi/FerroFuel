@@ -1127,8 +1127,32 @@ function loadSavedPlan(idx) {
 
 function clearAndRestart() {
   localStorage.removeItem('ferrofuel_plans');
-  showScreen('screen-step1');
+  // Reset all state
+  state.name = ''; state.age = 0; state.height = 0; state.weight = 0; state.goal = '';
+  state.disliked = new Set();
+  state.allergens = new Set();
+  state.conditions = new Set();
+  state.ironSupp = false; state.ironSuppName = '';
+  state.calcium = false; state.antacid = false; state.veg = false;
+  state.plan = null;
+  // Reset toggles
+  toggles.iron = false; toggles.calcium = false; toggles.antacid = false; toggles.veg = false;
+  document.querySelectorAll('.toggle-switch').forEach(t => t.classList.remove('on'));
+  document.getElementById('iron-supp-expand').classList.remove('visible');
+  document.getElementById('f_iron_supp').value = '';
+  // Reinitialise chips so they're clickable again
+  renderChips('chips-proteins', foodChips.proteins, 'disliked');
+  renderChips('chips-carbs', foodChips.carbs, 'disliked');
+  renderChips('chips-veg', foodChips.veg, 'disliked');
+  renderChips('chips-dairy', foodChips.dairy, 'disliked');
+  renderChips('chips-allergens', allergenChips, 'allergens', true);
+  renderChips('chips-conditions', conditionChips, 'conditions');
+  // Reset form fields
+  ['f_name','f_age','f_height','f_weight'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f_goal').value = '';
+  document.getElementById('step1-error').style.display = 'none';
   checkSavedPlans();
+  showScreen('screen-step1');
 }
 
 // ============================================================
