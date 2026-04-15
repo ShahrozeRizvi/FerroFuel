@@ -754,9 +754,28 @@ async function generatePlan() {
     });
 
     const data = await response.json();
+
+    if (!data.content || !data.content[0]) {
+      throw new Error('Empty response: ' + JSON.stringify(data));
+    }
+
     const raw = data.content[0].text;
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const plan = JSON.parse(clean);
+
+    // Robust JSON extraction — handles markdown fences, leading text, trailing text
+    let jsonStr = raw;
+    const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
+      jsonStr = fenceMatch[1];
+    } else {
+      // Find first { and last } to extract JSON object
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+        jsonStr = raw.substring(start, end + 1);
+      }
+    }
+
+    const plan = JSON.parse(jsonStr.trim());
     state.plan = plan;
     state.macros = macros;
     savePlan({ name: state.name, date: new Date().toLocaleDateString(), plan, macros, user: { ...state } });
@@ -764,7 +783,7 @@ async function generatePlan() {
     showScreen('screen-plan');
   } catch (e) {
     showScreen('screen-step4');
-    err.textContent = 'Something went wrong generating your plan. Please check your connection and try again.';
+    err.textContent = 'Error: ' + (e.message || 'Something went wrong. Please try again.');
     err.style.display = 'block';
   }
 }
