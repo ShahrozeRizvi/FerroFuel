@@ -853,6 +853,7 @@ SAFETY RULES — NEVER VIOLATE:
 6. If vegetarian/vegan: use only plant-based iron sources, pair ALL with Vitamin C, note lower bioavailability
 7. Always flag medical conditions with specific dietary cautions
 8. Never diagnose — phrase as dietary guidance only
+9. NEVER use lemon or lemon juice anywhere in the plan — user has acidity problems. Hard rule.
 
 CRITICAL OUTPUT RULES:
 - Each variation MUST have EXACTLY 3 meals: breakfast, lunch, dinner — never 2, never 4
@@ -962,23 +963,24 @@ MEDICAL CONDITIONS: ${conditionsList}
 
 MANDATORY MEAL RULES — follow precisely:
 1. EXACTLY 3 meals per variation: breakfast (~8-9am), lunch (~1-2pm), dinner (~7-7:30pm). Not 2. Not 4. Exactly 3.
-2. Dinner must be lighter on carbs than lunch
-3. Eggs only at breakfast — NEVER at lunch or dinner (eggs block iron absorption)
+2. Dinner must be lighter on carbs than lunch — max 25g carbs at dinner
+3. Eggs only at breakfast — NEVER at lunch or dinner (eggs block iron absorption by 28%)
 4. Dairy only at breakfast — NEVER at lunch or dinner (calcium blocks iron)
 5. Lunch is the primary iron meal — must contain red meat, liver, or dark poultry with Vitamin C source
-6. Dinner must also contain iron-rich protein with Vitamin C source
-7. Chicken liver in at least ONE meal across both variations — it is the highest iron food available
+6. Dinner must also contain iron-rich protein with Vitamin C source but kept simple and light
+7. Chicken liver in at least ONE lunch meal across both variations — NEVER at dinner (too heavy)
 8. Add haldi (turmeric) + black pepper to lunch and dinner — reduces inflammation that traps iron
 9. South Asian / Middle Eastern foods preferred: keema, chapati, dal, rice, lamb, chicken, beef
-10. No lemon in any meal — user has acidity. Use tomatoes, bell peppers, orange as Vit C instead
+10. NEVER use lemon in any meal — user has acidity problems. Use ONLY tomatoes, bell peppers, or orange as Vit C
 11. Each meal needs 2-3 realistic alternatives for common ingredients
 12. Soak all legumes overnight — mention this in descriptions
+13. No cream, no heavy sauces — keep cooking simple with minimal oil (1 tsp max)
 
-MACRO TARGETS:
-- Breakfast: ~${Math.round(macros.kcal * 0.27)} kcal
-- Lunch: ~${Math.round(macros.kcal * 0.40)} kcal  
-- Dinner: ~${Math.round(macros.kcal * 0.33)} kcal
-- Daily total must be within 50 kcal of ${macros.kcal}
+STRICT CALORIE TARGETS PER MEAL — must stay within 30 kcal of these:
+- Breakfast: exactly ${Math.round(macros.kcal * 0.26)} kcal
+- Lunch: exactly ${Math.round(macros.kcal * 0.40)} kcal
+- Dinner: exactly ${Math.round(macros.kcal * 0.34)} kcal
+- Daily total must be within 30 kcal of ${macros.kcal}
 
 Return ONLY the JSON object. No markdown. No explanation. No code fences.`;
 }
@@ -1035,7 +1037,8 @@ function renderPlan(plan, macros) {
 
   // Actions
   document.getElementById('planActions').innerHTML = `
-    <div class="saved-indicator"><div class="saved-dot"></div> Plan saved to your device</div>`;
+    <div class="saved-indicator"><div class="saved-dot"></div> Plan saved to your device</div>
+    <button class="btn-secondary" style="margin-top:4px;font-size:13px;padding:10px;" onclick="clearAndRestart()">Clear plan & start over</button>`;
 }
 
 function renderVariation(idx) {
@@ -1117,6 +1120,13 @@ function loadSavedPlan(idx) {
   state.conditions = new Set(p.user.conditions || []);
   renderPlan(p.plan, p.macros);
   showScreen('screen-plan');
+}
+
+function clearAndRestart() {
+  if (confirm('This will clear your saved plan so you can generate a new one. Continue?')) {
+    localStorage.removeItem('ferrofuel_plans');
+    location.reload();
+  }
 }
 
 // ============================================================
