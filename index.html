@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FerroFuel — Iron-Rich Diet Planner for Women</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rust: #C0522A;
+    --rust-light: #F5EDE8;
+    --rust-mid: #E8956D;
+    --rust-dark: #8B3318;
+    --sage: #4A6741;
+    --sage-light: #EAF0E8;
+    --cream: #FBF8F4;
+    --warm-white: #FFFFFF;
+    --charcoal: #2C2420;
+    --mid-gray: #7A6E6A;
+    --light-gray: #E8E2DE;
+    --border: #DDD6D0;
+    --danger: #C0392B;
+    --danger-light: #FDECEA;
+    --success: #2E7D32;
+    --success-light: #E8F5E9;
+    --warning: #C17A00;
+    --warning-light: #FFF8E1;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --shadow-sm: 0 1px 3px rgba(44,36,32,0.08);
+    --shadow-md: 0 4px 16px rgba(44,36,32,0.1);
+    --shadow-lg: 0 8px 32px rgba(44,36,32,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ---- LAYOUT ---- */
+  .app { max-width: 520px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ---- HEADER ---- */
+  .app-header {
+    padding: 20px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--warm-white);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px; background: var(--rust);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--charcoal); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--mid-gray); margin-top: -2px; }
+  .header-badge {
+    font-size: 11px; padding: 4px 10px; border-radius: 20px;
+    background: var(--rust-light); color: var(--rust-dark); font-weight: 500;
+  }
+
+  /* ---- PROGRESS BAR ---- */
+  .progress-wrap { background: var(--warm-white); padding: 12px 24px; border-bottom: 1px solid var(--border); }
+  .progress-steps { display: flex; gap: 6px; margin-bottom: 8px; }
+  .step-dot {
+    flex: 1; height: 3px; border-radius: 2px; background: var(--light-gray);
+    transition: background 0.3s;
+  }
+  .step-dot.done { background: var(--rust); }
+  .step-dot.active { background: var(--rust-mid); }
+  .progress-label { font-size: 12px; color: var(--mid-gray); }
+  .progress-label strong { color: var(--charcoal); font-weight: 500; }
+
+  /* ---- SCREENS ---- */
+  .screen { flex: 1; padding: 24px; display: none; flex-direction: column; gap: 20px; }
+  .screen.active { display: flex; }
+
+  /* ---- TYPOGRAPHY ---- */
+  .screen-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--charcoal); line-height: 1.2; }
+  .screen-title em { font-style: italic; color: var(--rust); }
+  .screen-subtitle { font-size: 14px; color: var(--mid-gray); line-height: 1.6; margin-top: 4px; }
+
+  /* ---- FORM ELEMENTS ---- */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 13px; font-weight: 500; color: var(--charcoal); }
+  .field input, .field select {
+    padding: 12px 14px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-md); font-size: 15px; font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white); color: var(--charcoal);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--rust); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-hint { font-size: 12px; color: var(--mid-gray); }
+
+  /* ---- CHIP SELECTS ---- */
+  .chip-label { font-size: 13px; font-weight: 500; color: var(--charcoal); margin-bottom: 8px; }
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 20px;
+    font-size: 13px; cursor: pointer; background: var(--warm-white);
+    color: var(--charcoal); transition: all 0.15s; user-select: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: var(--rust-mid); }
+  .chip.selected { background: var(--rust); border-color: var(--rust); color: white; font-weight: 500; }
+  .chip.allergen.selected { background: var(--danger); border-color: var(--danger); color: white; }
+
+  /* ---- GOAL CARDS ---- */
+  .goal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .goal-card {
+    padding: 14px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+    text-align: center; cursor: pointer; background: var(--warm-white);
+    transition: all 0.15s;
+  }
+  .goal-card:hover { border-color: var(--rust-mid); }
+  .goal-card.selected { border-color: var(--rust); background: var(--rust-light); }
+  .goal-icon { font-size: 24px; margin-bottom: 6px; }
+  .goal-name { font-size: 13px; font-weight: 500; color: var(--charcoal); }
+  .goal-desc { font-size: 11px; color: var(--mid-gray); margin-top: 2px; }
+
+  /* ---- TOGGLE ---- */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px; background: var(--warm-white); border: 1.5px solid var(--border); border-radius: var(--radius-md); }
+  .toggle-info { flex: 1; }
+  .toggle-title { font-size: 14px; font-weight: 500; color: var(--charcoal); }
+  .toggle-sub { font-size: 12px; color: var(--mid-gray); margin-top: 2px; }
+  .toggle-switch {
+    width: 44px; height: 24px; background: var(--light-gray); border-radius: 12px;
+    position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    border: none; outline: none;
+  }
+  .toggle-switch.on { background: var(--rust); }
+  .toggle-switch::after {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    background: white; border-radius: 50%; top: 3px; left: 3px;
+    transition: transform 0.2s; box-shadow: var(--shadow-sm);
+  }
+  .toggle-switch.on::after { transform: translateX(20px); }
+
+  /* ---- SUPPLEMENT INPUT ---- */
+  .supp-expand { margin-top: 10px; display: none; }
+  .supp-expand.visible { display: block; }
+
+  /* ---- BUTTONS ---- */
+  .btn-primary {
+    padding: 15px 24px; background: var(--rust); color: white;
+    border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%;
+    transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--rust-dark); }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled { background: var(--light-gray); color: var(--mid-gray); cursor: not-allowed; }
+  .btn-secondary {
+    padding: 12px 20px; background: transparent; color: var(--rust);
+    border: 1.5px solid var(--rust); border-radius: var(--radius-md);
+    font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; width: 100%; transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: var(--rust-light); }
+  .btn-back {
+    padding: 8px 0; background: transparent; border: none;
+    color: var(--mid-gray); font-size: 14px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+  }
+  .btn-back:hover { color: var(--charcoal); }
+
+  /* ---- GENERATING SCREEN ---- */
+  .gen-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 40px 24px; text-align: center; }
+  .spinner {
+    width: 56px; height: 56px; border: 3px solid var(--rust-light);
+    border-top-color: var(--rust); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .gen-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--charcoal); }
+  .gen-subtitle { font-size: 14px; color: var(--mid-gray); max-width: 280px; line-height: 1.6; }
+  .gen-steps { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+  .gen-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mid-gray); }
+  .gen-step.done { color: var(--sage); }
+  .gen-step-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--light-gray); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .gen-step.done .gen-step-icon { background: var(--sage-light); color: var(--sage); }
+
+  /* ---- PLAN SCREEN ---- */
+  .plan-header { background: var(--rust); border-radius: var(--radius-lg); padding: 20px; color: white; }
+  .plan-name { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 4px; }
+  .plan-meta { font-size: 13px; opacity: 0.85; }
+  .plan-macros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .plan-macro { background: rgba(255,255,255,0.18); border-radius: var(--radius-sm); padding: 8px 6px; text-align: center; }
+  .plan-macro-val { font-size: 16px; font-weight: 600; }
+  .plan-macro-label { font-size: 10px; opacity: 0.8; margin-top: 1px; }
+
+  .variation-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .var-tab {
+    padding: 12px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+    background: var(--warm-white); cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .var-tab.active { border-color: var(--rust); background: var(--rust-light); }
+  .var-tab-label { font-size: 12px; font-weight: 500; color: var(--charcoal); }
+  .var-tab-days { font-size: 11px; color: var(--mid-gray); margin-top: 2px; }
+  .var-tab.active .var-tab-days { color: var(--rust-dark); }
+
+  .meal-card {
+    background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+  }
+  .meal-header {
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border); background: var(--cream);
+  }
+  .meal-type { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid-gray); }
+  .meal-kcal { font-size: 12px; color: var(--mid-gray); }
+  .meal-body { padding: 16px; }
+  .meal-title { font-size: 16px; font-weight: 500; color: var(--charcoal); margin-bottom: 6px; }
+  .meal-desc { font-size: 13px; color: var(--mid-gray); line-height: 1.6; margin-bottom: 12px; }
+  .meal-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+  .badge-iron { background: #FDECEA; color: #C0392B; }
+  .badge-vitc { background: #E8F5E9; color: #2E7D32; }
+  .badge-macro { background: var(--rust-light); color: var(--rust-dark); }
+  .alts-section { border-top: 1px solid var(--border); padding-top: 12px; }
+  .alts-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mid-gray); margin-bottom: 8px; }
+  .alt-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+  .alt-item { font-weight: 500; color: var(--charcoal); min-width: 90px; }
+  .alt-val { color: var(--mid-gray); line-height: 1.5; }
+
+  .rules-section { background: var(--warm-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+  .rules-title { font-size: 13px; font-weight: 600; color: var(--charcoal); margin-bottom: 12px; }
+  .rule-row { display: flex; gap: 10px; font-size: 13px; color: var(--mid-gray); margin-bottom: 8px; line-height: 1.5; }
+  .rule-icon { flex-shrink: 0; margin-top: 1px; }
+
+  .supp-callout { background: var(--warning-light); border: 1px solid #F0C040; border-radius: var(--radius-md); padding: 14px 16px; }
+  .supp-callout-title { font-size: 13px; font-weight: 500; color: var(--warning); margin-bottom: 4px; }
+  .supp-callout-text { font-size: 13px; color: var(--charcoal); line-height: 1.6; }
+
+  .disclaimer { background: var(--danger-light); border: 1px solid #FFCDD2; border-radius: var(--radius-md); padding: 14px 16px; }
+  .disclaimer-text { font-size: 12px; color: #8B0000; line-height: 1.6; }
+
+  /* ---- PREMIUM LOCK ---- */
+  .premium-lock { background: var(--charcoal); border-radius: var(--radius-lg); padding: 24px; text-align: center; color: white; }
+  .lock-icon { font-size: 32px; margin-bottom: 12px; }
+  .lock-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 8px; }
+  .lock-sub { font-size: 14px; opacity: 0.7; line-height: 1.6; margin-bottom: 20px; }
+  .lock-price { font-size: 28px; font-weight: 600; color: var(--rust-mid); margin-bottom: 4px; }
+  .lock-price-sub { font-size: 12px; opacity: 0.6; margin-bottom: 20px; }
+  .btn-lock {
+    padding: 14px 24px; background: var(--rust); color: white;
+    border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%;
+    opacity: 0.7;
+  }
+  .lock-badge { display: inline-block; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 4px 12px; font-size: 12px; margin-bottom: 16px; }
+
+  /* ---- WELCOME SCREEN ---- */
+  .welcome-hero { background: var(--rust); border-radius: var(--radius-xl); padding: 32px 24px; text-align: center; color: white; }
+  .hero-icon { font-size: 48px; margin-bottom: 16px; }
+  .hero-title { font-family: 'DM Serif Display', serif; font-size: 30px; line-height: 1.2; margin-bottom: 10px; }
+  .hero-title em { font-style: italic; color: var(--rust-mid); }
+  .hero-sub { font-size: 14px; opacity: 0.85; line-height: 1.7; }
+  .feature-list { display: flex; flex-direction: column; gap: 10px; }
+  .feature-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--warm-white); border-radius: var(--radius-md); border: 1px solid var(--border); }
+  .feature-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .feature-title { font-size: 14px; font-weight: 500; color: var(--charcoal); }
+  .feature-desc { font-size: 12px; color: var(--mid-gray); margin-top: 2px; line-height: 1.5; }
+
+  /* ---- ERROR ---- */
+  .error-box { background: var(--danger-light); border: 1px solid #FFCDD2; border-radius: var(--radius-md); padding: 14px 16px; font-size: 13px; color: var(--danger); line-height: 1.6; }
+
+  /* ---- SAVED PLAN ---- */
+  .saved-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sage); font-weight: 500; }
+  .saved-dot { width: 7px; height: 7px; background: var(--sage); border-radius: 50%; }
+
+  /* ---- SECTION DIVIDER ---- */
+  .section-divider { display: flex; align-items: center; gap: 12px; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text { font-size: 12px; color: var(--mid-gray); font-weight: 500; }
+
+  /* ---- SCROLL ---- */
+  .screen { overflow-y: auto; }
+
+  /* ---- SAVED PLANS SCREEN ---- */
+  .saved-plan-card { background: var(--warm-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: border-color 0.15s; }
+  .saved-plan-card:hover { border-color: var(--rust-mid); }
+  .saved-plan-name { font-size: 15px; font-weight: 500; color: var(--charcoal); }
+  .saved-plan-meta { font-size: 12px; color: var(--mid-gray); margin-top: 3px; }
+  .saved-plan-arrow { color: var(--mid-gray); font-size: 18px; }
+
+  @media (max-width: 480px) {
+    .plan-macros { grid-template-columns: repeat(2, 1fr); }
+    .goal-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="app-header" id="appHeader">
+    <div class="logo">
+      <div class="logo-icon">🩸</div>
+      <div>
+        <div class="logo-text">FerroFuel</div>
+        <div class="logo-sub">Iron-Rich Diet Planner</div>
+      </div>
+    </div>
+    <div class="header-badge" id="headerBadge">Free Plan</div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-wrap" id="progressWrap" style="display:none;">
+    <div class="progress-steps" id="progressSteps"></div>
+    <div class="progress-label" id="progressLabel"></div>
+  </div>
+
+  <!-- SCREEN: WELCOME -->
+  <div class="screen active" id="screen-welcome">
+    <div class="welcome-hero">
+      <div class="hero-icon">🩸</div>
+      <div class="hero-title">Your personalised <em>iron-rich</em> diet plan</div>
+      <div class="hero-sub">Built around your body, food preferences, and health goals — in under 2 minutes.</div>
+    </div>
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">🥩</div>
+        <div>
+          <div class="feature-title">Iron-first meal planning</div>
+          <div class="feature-desc">Every meal is built around maximising iron absorption, not just iron content.</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔄</div>
+        <div>
+          <div class="feature-title">Two easy variations</div>
+          <div class="feature-desc">Simple A/B rotation — easy to remember, easy to follow every day.</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">⚠️</div>
+        <div>
+          <div class="feature-title">Allergen & supplement aware</div>
+          <div class="feature-desc">Your allergies and medications are factored into every recommendation.</div>
+        </div>
+      </div>
+    </div>
+    <div id="savedPlansBtnWrap"></div>
+    <button class="btn-primary" onclick="startOnboarding()">Get My Diet Plan →</button>
+    <div style="font-size:12px;color:var(--mid-gray);text-align:center;">First plan is free. No sign-up required.</div>
+  </div>
+
+  <!-- SCREEN: STEP 1 — Personal Info -->
+  <div class="screen" id="screen-step1">
+    <button class="btn-back" onclick="goBack('screen-welcome')">← Back</button>
+    <div>
+      <div class="screen-title">Tell us about <em>you</em></div>
+      <div class="screen-subtitle">This helps us calculate your exact calorie and macro targets.</div>
+    </div>
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="f_name" placeholder="e.g. Alisha" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Age</label>
+        <input type="number" id="f_age" placeholder="29" min="16" max="65" />
+      </div>
+      <div class="field">
+        <label>Goal</label>
+        <select id="f_goal">
+          <option value="">Select...</option>
+          <option value="loss">Weight loss</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="gain">Muscle gain</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Height (cm)</label>
+        <input type="number" id="f_height" placeholder="165" min="140" max="200" />
+      </div>
+      <div class="field">
+        <label>Weight (kg)</label>
+        <input type="number" id="f_weight" placeholder="70" min="40" max="150" />
+      </div>
+    </div>
+    <div id="step1-error" class="error-box" style="display:none;"></div>
+    <button class="btn-primary" onclick="goStep2()">Continue →</button>
+  </div>
+
+  <!-- SCREEN: STEP 2 — Food Preferences -->
+  <div class="screen" id="screen-step2">
+    <button class="btn-back" onclick="goBack('screen-step1')">← Back</button>
+    <div>
+      <div class="screen-title">Foods you <em>dislike</em></div>
+      <div class="screen-subtitle">Tap anything you won't eat. We'll avoid these completely in your plan.</div>
+    </div>
+
+    <div>
+      <div class="chip-label">Proteins</div>
+      <div class="chip-grid" id="chips-proteins"></div>
+    </div>
+    <div>
+      <div class="chip-label">Carbs & grains</div>
+      <div class="chip-grid" id="chips-carbs"></div>
+    </div>
+    <div>
+      <div class="chip-label">Vegetables & fruits</div>
+      <div class="chip-grid" id="chips-veg"></div>
+    </div>
+    <div>
+      <div class="chip-label">Dairy</div>
+      <div class="chip-grid" id="chips-dairy"></div>
+    </div>
+
+    <button class="btn-primary" onclick="goStep3()">Continue →</button>
+  </div>
+
+  <!-- SCREEN: STEP 3 — Allergens -->
+  <div class="screen" id="screen-step3">
+    <button class="btn-back" onclick="goBack('screen-step2')">← Back</button>
+    <div>
+      <div class="screen-title">Any <em>allergens?</em></div>
+      <div class="screen-subtitle">We will completely exclude these from your plan for safety.</div>
+    </div>
+    <div>
+      <div class="chip-label">Select all that apply</div>
+      <div class="chip-grid" id="chips-allergens"></div>
+    </div>
+    <div class="disclaimer">
+      <div class="disclaimer-text">⚠️ FerroFuel is a dietary guidance tool, not a medical device. Always consult your doctor or allergist before making dietary changes if you have severe allergies or medical conditions.</div>
+    </div>
+    <button class="btn-primary" onclick="goStep4()">Continue →</button>
+  </div>
+
+  <!-- SCREEN: STEP 4 — Supplements & Conditions -->
+  <div class="screen" id="screen-step4">
+    <button class="btn-back" onclick="goBack('screen-step3')">← Back</button>
+    <div>
+      <div class="screen-title">Health & <em>supplements</em></div>
+      <div class="screen-subtitle">This affects how we time your meals and flag any absorption blockers.</div>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-title">Taking an iron supplement?</div>
+        <div class="toggle-sub">e.g. Ferose, Ferrous Sulfate, Maltofer</div>
+      </div>
+      <button class="toggle-switch" id="toggle-iron" onclick="toggleSwitch('iron')"></button>
+    </div>
+    <div class="supp-expand" id="iron-supp-expand">
+      <div class="field" style="margin-top:8px;">
+        <label>Supplement name (optional)</label>
+        <input type="text" id="f_iron_supp" placeholder="e.g. Ferose, Ferrous Sulfate" />
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-title">Taking calcium supplements?</div>
+        <div class="toggle-sub">Calcium blocks iron absorption — timing matters</div>
+      </div>
+      <button class="toggle-switch" id="toggle-calcium" onclick="toggleSwitch('calcium')"></button>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-title">Taking antacids / PPIs?</div>
+        <div class="toggle-sub">e.g. omeprazole, Gaviscon, Nexium</div>
+      </div>
+      <button class="toggle-switch" id="toggle-antacid" onclick="toggleSwitch('antacid')"></button>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-title">Vegetarian or vegan diet?</div>
+        <div class="toggle-sub">We'll build your plan entirely from plant-based iron sources</div>
+      </div>
+      <button class="toggle-switch" id="toggle-veg" onclick="toggleSwitch('veg')"></button>
+    </div>
+
+    <div>
+      <div class="chip-label">Any other conditions? (optional)</div>
+      <div class="chip-grid" id="chips-conditions"></div>
+    </div>
+
+    <div id="step4-error" class="error-box" style="display:none;"></div>
+    <button class="btn-primary" onclick="generatePlan()">Generate My Diet Plan ✦</button>
+  </div>
+
+  <!-- SCREEN: GENERATING -->
+  <div class="screen" id="screen-generating">
+    <div class="gen-wrap">
+      <div class="spinner"></div>
+      <div class="gen-title">Building your plan…</div>
+      <div class="gen-subtitle">Personalising around your body, preferences, and iron absorption science.</div>
+      <div class="gen-steps" id="gen-steps-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: PLAN -->
+  <div class="screen" id="screen-plan">
+    <div class="plan-header" id="planHeader"></div>
+
+    <div id="suppCallout" style="display:none;"></div>
+
+    <div class="variation-tabs">
+      <div class="var-tab active" id="varTabA" onclick="switchVariation(0)">
+        <div class="var-tab-label">Variation A</div>
+        <div class="var-tab-days" id="varDaysA"></div>
+      </div>
+      <div class="var-tab" id="varTabB" onclick="switchVariation(1)">
+        <div class="var-tab-label">Variation B</div>
+        <div class="var-tab-days" id="varDaysB"></div>
+      </div>
+    </div>
+
+    <div id="mealsContainer"></div>
+
+    <div class="rules-section" id="rulesSection"></div>
+
+    <div id="planActions" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+    <div class="premium-lock">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-badge">Coming soon</div>
+      <div class="lock-title">Generate a new plan</div>
+      <div class="lock-sub">Unlock unlimited plan regeneration, weekly meal rotations, and shopping lists.</div>
+      <div class="lock-price">$5 <span style="font-size:16px;font-weight:400;">/month</span></div>
+      <div class="lock-price-sub">Premium — launching soon</div>
+      <button class="btn-lock" disabled>Get Premium →</button>
+    </div>
+
+    <div class="disclaimer">
+      <div class="disclaimer-text">⚠️ Medical disclaimer: FerroFuel provides general dietary guidance only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult your doctor before making significant dietary changes, especially if you have medical conditions or take medications. This tool does not account for all individual health circumstances.</div>
+    </div>
+  </div>
+
+  <!-- SCREEN: SAVED PLANS -->
+  <div class="screen" id="screen-saved">
+    <button class="btn-back" onclick="showScreen('screen-welcome')">← Back</button>
+    <div>
+      <div class="screen-title">Your <em>saved plans</em></div>
+      <div class="screen-subtitle">Tap any plan to view it.</div>
+    </div>
+    <div id="savedPlansList"></div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  step: 1,
+  name: '', age: 0, height: 0, weight: 0, goal: '',
+  disliked: new Set(),
+  allergens: new Set(),
+  ironSupp: false, ironSuppName: '',
+  calcium: false, antacid: false, veg: false,
+  conditions: new Set(),
+  plan: null,
+  activeVariation: 0
+};
+
+const toggles = { iron: false, calcium: false, antacid: false, veg: false };
+
+// ============================================================
+// FOOD CHIP DATA
+// ============================================================
+const foodChips = {
+  proteins: ['Beef','Lamb','Chicken liver','Chicken breast','Chicken thigh','Fish','Tuna','Sardines','Eggs','Egg whites','Tofu','Tempeh'],
+  carbs: ['Brown rice','White rice','Oats','Chapati','Multigrain bread','White bread','Quinoa','Lentils','Chickpeas','Beans'],
+  veg: ['Spinach','Broccoli','Bell pepper','Tomatoes','Kale','Courgette','Carrots','Kiwi','Orange','Strawberries','Banana'],
+  dairy: ['Yoghurt','Greek yoghurt','Milk','Cheese']
+};
+
+const allergenChips = ['Gluten','Dairy / Lactose','Eggs','Shellfish','Tree nuts','Peanuts','Soy','Sesame','Fish','Wheat'];
+const conditionChips = ['PCOS','Thyroid condition','Diabetes','Celiac disease','IBS','Pregnancy','Postpartum','Kidney disease'];
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  renderChips('chips-proteins', foodChips.proteins, 'disliked');
+  renderChips('chips-carbs', foodChips.carbs, 'disliked');
+  renderChips('chips-veg', foodChips.veg, 'disliked');
+  renderChips('chips-dairy', foodChips.dairy, 'disliked');
+  renderChips('chips-allergens', allergenChips, 'allergens', true);
+  renderChips('chips-conditions', conditionChips, 'conditions');
+  checkSavedPlans();
+}
+
+function checkSavedPlans() {
+  const saved = getSavedPlans();
+  const wrap = document.getElementById('savedPlansBtnWrap');
+  if (saved.length > 0) {
+    wrap.innerHTML = `<button class="btn-secondary" onclick="showSavedPlans()">View my saved plan (${saved.length})</button>`;
+  }
+}
+
+// ============================================================
+// CHIP RENDERING
+// ============================================================
+function renderChips(containerId, items, stateKey, isAllergen) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  items.forEach(item => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (isAllergen ? ' allergen' : '');
+    chip.textContent = item;
+    chip.onclick = () => {
+      if (state[stateKey].has(item)) {
+        state[stateKey].delete(item);
+        chip.classList.remove('selected');
+      } else {
+        state[stateKey].add(item);
+        chip.classList.add('selected');
+      }
+    };
+    el.appendChild(chip);
+  });
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const isOnboarding = ['screen-step1','screen-step2','screen-step3','screen-step4'].includes(id);
+  document.getElementById('progressWrap').style.display = isOnboarding ? 'block' : 'none';
+  if (isOnboarding) updateProgress(id);
+  window.scrollTo(0, 0);
+}
+
+function updateProgress(screenId) {
+  const steps = ['screen-step1','screen-step2','screen-step3','screen-step4'];
+  const current = steps.indexOf(screenId);
+  const labels = ['Personal info','Food preferences','Allergens','Supplements'];
+  const stepsEl = document.getElementById('progressSteps');
+  stepsEl.innerHTML = '';
+  steps.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i < current ? ' done' : i === current ? ' active' : '');
+    stepsEl.appendChild(dot);
+  });
+  document.getElementById('progressLabel').innerHTML = `<strong>Step ${current+1} of 4</strong> — ${labels[current]}`;
+}
+
+function startOnboarding() {
+  const saved = getSavedPlans();
+  if (saved.length >= 1) {
+    showScreen('screen-saved');
+    return;
+  }
+  showScreen('screen-step1');
+}
+
+function goBack(target) { showScreen(target); }
+
+function goStep2() {
+  const name = document.getElementById('f_name').value.trim();
+  const age = parseInt(document.getElementById('f_age').value);
+  const height = parseInt(document.getElementById('f_height').value);
+  const weight = parseInt(document.getElementById('f_weight').value);
+  const goal = document.getElementById('f_goal').value;
+  const err = document.getElementById('step1-error');
+
+  if (!name) { err.textContent = 'Please enter your name.'; err.style.display='block'; return; }
+  if (!age || age < 16 || age > 65) { err.textContent = 'Please enter a valid age (16–65).'; err.style.display='block'; return; }
+  if (!height || height < 140 || height > 200) { err.textContent = 'Please enter a valid height in cm (140–200).'; err.style.display='block'; return; }
+  if (!weight || weight < 40 || weight > 150) { err.textContent = 'Please enter a valid weight in kg (40–150).'; err.style.display='block'; return; }
+  if (!goal) { err.textContent = 'Please select your goal.'; err.style.display='block'; return; }
+
+  err.style.display = 'none';
+  state.name = name; state.age = age; state.height = height; state.weight = weight; state.goal = goal;
+  showScreen('screen-step2');
+}
+
+function goStep3() { showScreen('screen-step3'); }
+function goStep4() { showScreen('screen-step4'); }
+
+function toggleSwitch(key) {
+  toggles[key] = !toggles[key];
+  const btn = document.getElementById('toggle-' + key);
+  btn.classList.toggle('on', toggles[key]);
+  if (key === 'iron') {
+    document.getElementById('iron-supp-expand').classList.toggle('visible', toggles[key]);
+  }
+}
+
+// ============================================================
+// MACRO CALCULATOR
+// ============================================================
+function calcMacros() {
+  const { age, height, weight, goal } = state;
+  const bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+  const tdee = bmr * 1.4;
+  let kcal;
+  if (goal === 'loss') kcal = Math.round(tdee - 600);
+  else if (goal === 'gain') kcal = Math.round(tdee + 200);
+  else kcal = Math.round(tdee);
+  const protein = Math.round(weight * 1.6);
+  const fat = Math.round(kcal * 0.25 / 9);
+  const carbs = Math.round((kcal - protein * 4 - fat * 9) / 4);
+  return { kcal, protein, fat, carbs };
+}
+
+// ============================================================
+// GENERATE PLAN
+// ============================================================
+async function generatePlan() {
+  const err = document.getElementById('step4-error');
+  state.ironSupp = toggles.iron;
+  state.ironSuppName = document.getElementById('f_iron_supp').value.trim();
+  state.calcium = toggles.calcium;
+  state.antacid = toggles.antacid;
+  state.veg = toggles.veg;
+
+  err.style.display = 'none';
+  showScreen('screen-generating');
+  animateGenSteps();
+
+  const macros = calcMacros();
+  const prompt = buildPrompt(macros);
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        system: buildSystemPrompt(),
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content[0].text;
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const plan = JSON.parse(clean);
+    state.plan = plan;
+    state.macros = macros;
+    savePlan({ name: state.name, date: new Date().toLocaleDateString(), plan, macros, user: { ...state } });
+    renderPlan(plan, macros);
+    showScreen('screen-plan');
+  } catch (e) {
+    showScreen('screen-step4');
+    err.textContent = 'Something went wrong generating your plan. Please check your connection and try again.';
+    err.style.display = 'block';
+  }
+}
+
+function animateGenSteps() {
+  const steps = [
+    'Calculating your calorie targets…',
+    'Applying iron absorption science…',
+    'Filtering for your food preferences…',
+    'Building your two-variation plan…'
+  ];
+  const el = document.getElementById('gen-steps-list');
+  el.innerHTML = '';
+  steps.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'gen-step';
+    div.id = 'genstep-' + i;
+    div.innerHTML = `<div class="gen-step-icon">○</div><span>${s}</span>`;
+    el.appendChild(div);
+    setTimeout(() => {
+      div.classList.add('done');
+      div.querySelector('.gen-step-icon').textContent = '✓';
+    }, (i + 1) * 1200);
+  });
+}
+
+// ============================================================
+// PROMPT BUILDER
+// ============================================================
+function buildSystemPrompt() {
+  return `You are a clinical nutritionist specialising in iron deficiency in women. You create personalised, practical iron-rich diet plans. You have deep knowledge of:
+- Heme vs non-heme iron bioavailability
+- Vitamin C enhancement of non-heme iron absorption
+- Foods and substances that block iron absorption (calcium, tannins, phytates, egg phosphoproteins)
+- Safe supplement timing for maximum absorption
+- Allergen avoidance
+- Calorie and macro calculation for different body goals
+
+SAFETY RULES — NEVER VIOLATE:
+1. NEVER recommend foods the user has listed as allergens
+2. NEVER recommend foods the user has listed as disliked
+3. If user takes antacids/PPIs, always flag that this reduces stomach acid and impairs iron absorption — recommend taking iron supplement at least 2 hours before antacid dose
+4. If user takes calcium supplements, always recommend separating calcium from iron meals by 3+ hours
+5. If vegetarian/vegan, use ONLY plant-based iron sources and always pair with Vitamin C (non-heme iron has much lower bioavailability)
+6. Always include a medical disclaimer note
+7. If a flagged medical condition (PCOS, celiac, kidney disease, pregnancy) is present, include specific dietary cautions for that condition
+8. Never give absolute medical diagnoses — always phrase as dietary guidance
+
+OUTPUT FORMAT: Return ONLY valid JSON, no markdown, no preamble. Use exactly this structure:
+{
+  "supplement_advice": "string — specific timing advice for their supplement situation",
+  "variations": [
+    {
+      "label": "Variation A",
+      "days": "Mon / Wed / Fri / Sun",
+      "meals": [
+        {
+          "type": "breakfast",
+          "time": "8–9am",
+          "kcal": 400,
+          "title": "Meal name",
+          "description": "Detailed portion and preparation instructions",
+          "macros": { "p": 30, "c": 45, "f": 10 },
+          "hasHemeIron": true,
+          "hasVitC": true,
+          "alternatives": [
+            { "item": "Food name", "alt": "Alternative options with context" }
+          ]
+        }
+      ],
+      "totals": { "kcal": 1450, "p": 100, "c": 130, "f": 38 }
+    }
+  ],
+  "absorption_rules": [
+    { "type": "do", "text": "rule text" }
+  ],
+  "conditions_note": "string or null — special note if user has flagged conditions"
+}`;
+}
+
+function buildPrompt(macros) {
+  const dislikedList = state.disliked.size > 0 ? Array.from(state.disliked).join(', ') : 'None';
+  const allergenList = state.allergens.size > 0 ? Array.from(state.allergens).join(', ') : 'None';
+  const conditionsList = state.conditions.size > 0 ? Array.from(state.conditions).join(', ') : 'None';
+  const goalMap = { loss: 'weight loss', maintenance: 'weight maintenance', gain: 'muscle gain' };
+
+  return `Create a personalised iron-rich diet plan for a woman with the following profile:
+
+NAME: ${state.name}
+AGE: ${state.age} years
+HEIGHT: ${state.height} cm
+WEIGHT: ${state.weight} kg
+GOAL: ${goalMap[state.goal]}
+TARGET MACROS: ${macros.kcal} kcal / ${macros.protein}g protein / ${macros.carbs}g carbs / ${macros.fat}g fat
+
+FOODS TO AVOID (disliked): ${dislikedList}
+ALLERGENS (must never include): ${allergenList}
+DIET TYPE: ${state.veg ? 'Vegetarian/Vegan — use only plant-based iron sources' : 'Omnivore'}
+
+SUPPLEMENTS:
+- Iron supplement: ${state.ironSupp ? `Yes — ${state.ironSuppName || 'unspecified iron supplement'}` : 'No'}
+- Calcium supplement: ${state.calcium ? 'Yes — IMPORTANT: must separate from iron meals by 3+ hours' : 'No'}
+- Antacids/PPIs: ${state.antacid ? 'Yes — IMPORTANT: reduces stomach acid, impairs iron absorption. Flag this prominently.' : 'No'}
+
+MEDICAL CONDITIONS: ${conditionsList}
+
+INSTRUCTIONS:
+- Build 2 meal variations (Variation A: Mon/Wed/Fri/Sun, Variation B: Tue/Thu/Sat), each with breakfast, lunch, dinner
+- Every lunch and dinner must include a Vitamin C source paired with the iron-rich food
+- Eggs should NOT be in the same meal as the primary iron source (eggs reduce iron absorption by up to 28%)
+- Dairy should only appear at breakfast, separated from iron-heavy meals
+- Chicken liver should appear at least once across both variations (highest iron density) unless the user dislikes it
+- Each meal must include 2-3 practical food alternatives for flexibility
+- Alternatives should reflect common South Asian / Middle Eastern pantry staples where possible (rice, chapati, dhal, chicken, beef)
+- Meals should be realistic and simple to prepare — not more than 3-4 main ingredients
+- Make sure total macros across the day match the target closely
+- Do not include any lemon-based dressings (user has acidity issues) — use tomatoes, orange, or bell pepper as Vit C sources instead
+- Return ONLY the JSON object, nothing else`;
+}
+
+// ============================================================
+// RENDER PLAN
+// ============================================================
+function renderPlan(plan, macros) {
+  // Header
+  document.getElementById('planHeader').innerHTML = `
+    <div class="plan-name">${state.name}'s Iron Diet Plan</div>
+    <div class="plan-meta">${state.goal === 'loss' ? 'Weight loss' : state.goal === 'gain' ? 'Muscle gain' : 'Maintenance'} • Generated ${new Date().toLocaleDateString()}</div>
+    <div class="plan-macros">
+      <div class="plan-macro"><div class="plan-macro-val">${macros.kcal}</div><div class="plan-macro-label">kcal</div></div>
+      <div class="plan-macro"><div class="plan-macro-val">${macros.protein}g</div><div class="plan-macro-label">protein</div></div>
+      <div class="plan-macro"><div class="plan-macro-val">${macros.carbs}g</div><div class="plan-macro-label">carbs</div></div>
+      <div class="plan-macro"><div class="plan-macro-val">${macros.fat}g</div><div class="plan-macro-label">fats</div></div>
+    </div>`;
+
+  // Supplement callout
+  if (plan.supplement_advice) {
+    document.getElementById('suppCallout').style.display = 'block';
+    document.getElementById('suppCallout').innerHTML = `
+      <div class="supp-callout">
+        <div class="supp-callout-title">💊 Supplement timing</div>
+        <div class="supp-callout-text">${plan.supplement_advice}</div>
+      </div>`;
+  }
+
+  // Variation day labels
+  document.getElementById('varDaysA').textContent = plan.variations[0].days;
+  document.getElementById('varDaysB').textContent = plan.variations[1].days;
+
+  renderVariation(0);
+
+  // Rules
+  const rulesEl = document.getElementById('rulesSection');
+  let rulesHtml = '<div class="rules-title">Iron absorption rules</div>';
+  plan.absorption_rules.forEach(r => {
+    rulesHtml += `<div class="rule-row"><span class="rule-icon">${r.type === 'do' ? '✓' : '✗'}</span><span>${r.text}</span></div>`;
+  });
+  if (plan.conditions_note) {
+    rulesHtml += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--warning);line-height:1.6;">⚠️ ${plan.conditions_note}</div>`;
+  }
+  rulesEl.innerHTML = rulesHtml;
+
+  // Actions
+  document.getElementById('planActions').innerHTML = `
+    <div class="saved-indicator"><div class="saved-dot"></div> Plan saved to your device</div>`;
+}
+
+function renderVariation(idx) {
+  state.activeVariation = idx;
+  document.getElementById('varTabA').classList.toggle('active', idx === 0);
+  document.getElementById('varTabB').classList.toggle('active', idx === 1);
+  const variation = state.plan.variations[idx];
+  let html = '';
+  variation.meals.forEach(meal => {
+    html += `<div class="meal-card">
+      <div class="meal-header">
+        <span class="meal-type">${meal.type} — ${meal.time}</span>
+        <span class="meal-kcal">${meal.kcal} kcal</span>
+      </div>
+      <div class="meal-body">
+        <div class="meal-title">${meal.title}</div>
+        <div class="meal-desc">${meal.description}</div>
+        <div class="meal-badges">
+          <span class="badge badge-macro">P ${meal.macros.p}g · C ${meal.macros.c}g · F ${meal.macros.f}g</span>
+          ${meal.hasHemeIron ? '<span class="badge badge-iron">heme iron</span>' : ''}
+          ${meal.hasVitC ? '<span class="badge badge-vitc">vit C paired</span>' : ''}
+        </div>
+        ${meal.alternatives && meal.alternatives.length ? `
+        <div class="alts-section">
+          <div class="alts-label">Alternatives</div>
+          ${meal.alternatives.map(a => `
+            <div class="alt-row">
+              <div class="alt-item">${a.item}</div>
+              <div class="alt-val">${a.alt}</div>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('mealsContainer').innerHTML = html;
+}
+
+function switchVariation(idx) { renderVariation(idx); }
+
+// ============================================================
+// LOCAL STORAGE
+// ============================================================
+function getSavedPlans() {
+  try { return JSON.parse(localStorage.getItem('ferrofuel_plans') || '[]'); } catch { return []; }
+}
+
+function savePlan(planData) {
+  const saved = getSavedPlans();
+  saved.push(planData);
+  localStorage.setItem('ferrofuel_plans', JSON.stringify(saved));
+}
+
+function showSavedPlans() {
+  const saved = getSavedPlans();
+  const el = document.getElementById('savedPlansList');
+  if (saved.length === 0) {
+    el.innerHTML = '<div style="font-size:14px;color:var(--mid-gray);">No saved plans yet.</div>';
+  } else {
+    el.innerHTML = saved.map((p, i) => `
+      <div class="saved-plan-card" onclick="loadSavedPlan(${i})">
+        <div>
+          <div class="saved-plan-name">${p.name}'s Plan</div>
+          <div class="saved-plan-meta">${p.date} · ${p.user.goal === 'loss' ? 'Weight loss' : p.user.goal === 'gain' ? 'Muscle gain' : 'Maintenance'} · ${p.macros.kcal} kcal</div>
+        </div>
+        <div class="saved-plan-arrow">›</div>
+      </div>`).join('');
+  }
+  showScreen('screen-saved');
+}
+
+function loadSavedPlan(idx) {
+  const saved = getSavedPlans();
+  const p = saved[idx];
+  Object.assign(state, p.user);
+  state.plan = p.plan;
+  state.macros = p.macros;
+  state.disliked = new Set(p.user.disliked || []);
+  state.allergens = new Set(p.user.allergens || []);
+  state.conditions = new Set(p.user.conditions || []);
+  renderPlan(p.plan, p.macros);
+  showScreen('screen-plan');
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+init();
+</script>
+</body>
+</html>
