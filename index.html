@@ -242,8 +242,11 @@
 
   .rules-section { background: var(--warm-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
   .rules-title { font-size: 13px; font-weight: 600; color: var(--charcoal); margin-bottom: 12px; }
-  .rule-row { display: flex; gap: 10px; font-size: 13px; color: var(--mid-gray); margin-bottom: 8px; line-height: 1.5; }
-  .rule-icon { flex-shrink: 0; margin-top: 1px; }
+  .rules-grid-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  @media (max-width: 500px) { .rules-grid-inner { grid-template-columns: 1fr; } }
+  .rule-do { background: var(--color-background-success); border: 0.5px solid var(--color-border-success); border-radius: var(--border-radius-md); padding: 10px 12px; display: flex; gap: 8px; font-size: 13px; color: var(--color-text-primary); line-height: 1.5; }
+  .rule-dont { background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 10px 12px; display: flex; gap: 8px; font-size: 13px; color: var(--color-text-primary); line-height: 1.5; }
+  .rule-icon { flex-shrink: 0; font-size: 13px; margin-top: 1px; }
 
   .supp-callout { background: var(--warning-light); border: 1px solid #F0C040; border-radius: var(--radius-md); padding: 14px 16px; }
   .supp-callout-title { font-size: 13px; font-weight: 500; color: var(--warning); margin-bottom: 4px; }
@@ -712,14 +715,15 @@ function toggleSwitch(key) {
 function calcMacros() {
   const { age, height, weight, goal } = state;
   const bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-  const tdee = bmr * 1.4;
+  const tdee = Math.round(bmr * 1.4);
   let kcal;
-  if (goal === 'loss') kcal = Math.round(tdee - 600);
-  else if (goal === 'gain') kcal = Math.round(tdee + 200);
-  else kcal = Math.round(tdee);
-  const protein = Math.round(weight * 1.6);
+  if (goal === 'loss') kcal = tdee - 600;
+  else if (goal === 'gain') kcal = tdee + 200;
+  else kcal = tdee;
+  kcal = Math.max(1200, Math.min(1800, Math.round(kcal)));
+  const protein = goal === 'loss' ? Math.min(110, Math.round(weight * 1.2)) : Math.round(weight * 1.6);
   const fat = Math.round(kcal * 0.25 / 9);
-  const carbs = Math.round((kcal - protein * 4 - fat * 9) / 4);
+  const carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
   return { kcal, protein, fat, carbs };
 }
 
@@ -776,6 +780,19 @@ async function generatePlan() {
     }
 
     const plan = JSON.parse(jsonStr.trim());
+
+    // Validate structure — catch missing meals before rendering
+    if (!plan.variations || plan.variations.length < 2) {
+      throw new Error('Plan missing variations. Please try again.');
+    }
+    plan.variations.forEach((v, i) => {
+      if (!v.meals || v.meals.length < 3) {
+        throw new Error(`Variation ${i + 1} has only ${v.meals ? v.meals.length : 0} meals. Expected 3. Please try again.`);
+      }
+    });
+    if (!plan.absorption_rules || plan.absorption_rules.length < 4) {
+      throw new Error('Plan missing absorption rules. Please try again.');
+    }
     state.plan = plan;
     state.macros = macros;
     savePlan({ name: state.name, date: new Date().toLocaleDateString(), plan, macros, user: { ...state } });
@@ -814,27 +831,40 @@ function animateGenSteps() {
 // PROMPT BUILDER
 // ============================================================
 function buildSystemPrompt() {
-  return `You are a clinical nutritionist specialising in iron deficiency in women. You create personalised, practical iron-rich diet plans. You have deep knowledge of:
-- Heme vs non-heme iron bioavailability
-- Vitamin C enhancement of non-heme iron absorption
-- Foods and substances that block iron absorption (calcium, tannins, phytates, egg phosphoproteins)
-- Safe supplement timing for maximum absorption
-- Allergen avoidance
-- Calorie and macro calculation for different body goals
+  return `You are a clinical nutritionist specialising in iron deficiency in women. You create personalised, practical iron-rich diet plans based on iron absorption science.
+
+IRON ABSORPTION SCIENCE — apply to every plan:
+- Heme iron (red meat, liver, dark poultry) absorbs at 25% — far superior to non-heme iron (5-17%)
+- Vitamin C at every iron-heavy meal is mandatory — it converts ferric to ferrous iron for absorption
+- Eggs must NEVER appear in the same meal as the primary iron source — egg phosphoproteins reduce absorption by 28%
+- Dairy (yoghurt, milk, cheese) only at breakfast — calcium blocks both heme and non-heme iron
+- Tea and coffee must be avoided within 1 hour of any meal — tannins form insoluble complexes with iron
+- Phytates in legumes/grains reduce absorption by 50-65% — always instruct soaking overnight before cooking
+- Haldi (turmeric) + black pepper in cooking reduces inflammation that traps iron — include in lunch and dinner
+- Chicken liver is the single highest iron food available — must appear at least once across both variations
+- South Asian / Middle Eastern staples preferred: rice, chapati, dhal, keema, chicken, beef, lamb
 
 SAFETY RULES — NEVER VIOLATE:
-1. NEVER recommend foods the user has listed as allergens
-2. NEVER recommend foods the user has listed as disliked
-3. If user takes antacids/PPIs, always flag that this reduces stomach acid and impairs iron absorption — recommend taking iron supplement at least 2 hours before antacid dose
-4. If user takes calcium supplements, always recommend separating calcium from iron meals by 3+ hours
-5. If vegetarian/vegan, use ONLY plant-based iron sources and always pair with Vitamin C (non-heme iron has much lower bioavailability)
-6. Always include a medical disclaimer note
-7. If a flagged medical condition (PCOS, celiac, kidney disease, pregnancy) is present, include specific dietary cautions for that condition
-8. Never give absolute medical diagnoses — always phrase as dietary guidance
+1. NEVER recommend allergen foods
+2. NEVER recommend disliked foods
+3. If iron supplement taken: give specific timing — on waking, empty stomach, with orange juice, wait 45-60 min before eating
+4. If calcium supplement taken: separate from ALL iron meals by 3+ hours, best taken at bedtime
+5. If antacids/PPIs taken: flag that stomach acid reduction impairs iron absorption, take iron supplement 2 hours before antacid
+6. If vegetarian/vegan: use only plant-based iron sources, pair ALL with Vitamin C, note lower bioavailability
+7. Always flag medical conditions with specific dietary cautions
+8. Never diagnose — phrase as dietary guidance only
 
-OUTPUT FORMAT: Return ONLY valid JSON, no markdown, no preamble. Use exactly this structure:
+CRITICAL OUTPUT RULES:
+- Each variation MUST have EXACTLY 3 meals: breakfast, lunch, dinner — never 2, never 4
+- Each meal MUST have 2-3 alternatives
+- absorption_rules MUST have at least 6 rules alternating do/dont
+- Totals in each variation must mathematically match the sum of meal kcal/macros
+- Meal kcal must add up to the target daily kcal within 50 kcal
+- Return ONLY valid JSON, no markdown fences, no preamble, no explanation
+
+OUTPUT STRUCTURE — follow exactly:
 {
-  "supplement_advice": "string — specific timing advice for their supplement situation",
+  "supplement_advice": "specific personalised timing advice based on their exact supplement situation",
   "variations": [
     {
       "label": "Variation A",
@@ -843,24 +873,63 @@ OUTPUT FORMAT: Return ONLY valid JSON, no markdown, no preamble. Use exactly thi
         {
           "type": "breakfast",
           "time": "8–9am",
-          "kcal": 400,
+          "kcal": 380,
           "title": "Meal name",
-          "description": "Detailed portion and preparation instructions",
-          "macros": { "p": 30, "c": 45, "f": 10 },
+          "description": "Detailed portion sizes and simple preparation instructions",
+          "macros": { "p": 30, "c": 42, "f": 9 },
+          "hasHemeIron": false,
+          "hasVitC": true,
+          "alternatives": [
+            { "item": "Food name", "alt": "2-3 practical alternatives with context" }
+          ]
+        },
+        {
+          "type": "lunch",
+          "time": "1–2pm",
+          "kcal": 610,
+          "title": "Meal name",
+          "description": "Detailed portion sizes and preparation",
+          "macros": { "p": 42, "c": 55, "f": 14 },
           "hasHemeIron": true,
           "hasVitC": true,
           "alternatives": [
-            { "item": "Food name", "alt": "Alternative options with context" }
+            { "item": "Food name", "alt": "alternatives" }
+          ]
+        },
+        {
+          "type": "dinner",
+          "time": "7–7:30pm",
+          "kcal": 460,
+          "title": "Meal name",
+          "description": "Detailed portion sizes and preparation. Keep carbs lighter at dinner.",
+          "macros": { "p": 44, "c": 20, "f": 14 },
+          "hasHemeIron": true,
+          "hasVitC": true,
+          "alternatives": [
+            { "item": "Food name", "alt": "alternatives" }
           ]
         }
       ],
+      "totals": { "kcal": 1450, "p": 101, "c": 117, "f": 37 }
+    },
+    {
+      "label": "Variation B",
+      "days": "Tue / Thu / Sat",
+      "meals": [ ... same 3 meal structure ... ],
       "totals": { "kcal": 1450, "p": 100, "c": 130, "f": 38 }
     }
   ],
   "absorption_rules": [
-    { "type": "do", "text": "rule text" }
+    { "type": "do", "text": "rule" },
+    { "type": "dont", "text": "rule" },
+    { "type": "do", "text": "rule" },
+    { "type": "dont", "text": "rule" },
+    { "type": "do", "text": "rule" },
+    { "type": "dont", "text": "rule" },
+    { "type": "do", "text": "rule" },
+    { "type": "dont", "text": "rule" }
   ],
-  "conditions_note": "string or null — special note if user has flagged conditions"
+  "conditions_note": null
 }`;
 }
 
@@ -869,39 +938,49 @@ function buildPrompt(macros) {
   const allergenList = state.allergens.size > 0 ? Array.from(state.allergens).join(', ') : 'None';
   const conditionsList = state.conditions.size > 0 ? Array.from(state.conditions).join(', ') : 'None';
   const goalMap = { loss: 'weight loss', maintenance: 'weight maintenance', gain: 'muscle gain' };
+  const suppName = state.ironSuppName || 'iron supplement';
 
-  return `Create a personalised iron-rich diet plan for a woman with the following profile:
+  return `Create a personalised iron-rich diet plan for this woman:
 
-NAME: ${state.name}
-AGE: ${state.age} years
-HEIGHT: ${state.height} cm
-WEIGHT: ${state.weight} kg
-GOAL: ${goalMap[state.goal]}
-TARGET MACROS: ${macros.kcal} kcal / ${macros.protein}g protein / ${macros.carbs}g carbs / ${macros.fat}g fat
+PROFILE:
+- Name: ${state.name}
+- Age: ${state.age} years
+- Height: ${state.height} cm | Weight: ${state.weight} kg
+- Goal: ${goalMap[state.goal]}
+- Daily targets: ${macros.kcal} kcal / ${macros.protein}g protein / ${macros.carbs}g carbs / ${macros.fat}g fat
 
-FOODS TO AVOID (disliked): ${dislikedList}
-ALLERGENS (must never include): ${allergenList}
-DIET TYPE: ${state.veg ? 'Vegetarian/Vegan — use only plant-based iron sources' : 'Omnivore'}
+FOODS TO AVOID (disliked — never include): ${dislikedList}
+ALLERGENS (never include under any circumstance): ${allergenList}
+DIET TYPE: ${state.veg ? 'Vegetarian/Vegan — plant-based iron sources only' : 'Omnivore — include red meat and poultry'}
 
-SUPPLEMENTS:
-- Iron supplement: ${state.ironSupp ? `Yes — ${state.ironSuppName || 'unspecified iron supplement'}` : 'No'}
-- Calcium supplement: ${state.calcium ? 'Yes — IMPORTANT: must separate from iron meals by 3+ hours' : 'No'}
-- Antacids/PPIs: ${state.antacid ? 'Yes — IMPORTANT: reduces stomach acid, impairs iron absorption. Flag this prominently.' : 'No'}
+SUPPLEMENTS & MEDICATIONS:
+- Iron supplement: ${state.ironSupp ? `YES — takes ${suppName}. Supplement advice must be: take on waking, empty stomach, with 150ml orange juice, wait 45-60 min before breakfast` : 'No iron supplement'}
+- Calcium supplement: ${state.calcium ? 'YES — must note: take at bedtime, separated from all iron meals by 3+ hours' : 'No'}
+- Antacids/PPIs: ${state.antacid ? 'YES — must flag: reduces stomach acid impairing iron absorption. Take iron 2 hours before antacid.' : 'No'}
 
 MEDICAL CONDITIONS: ${conditionsList}
 
-INSTRUCTIONS:
-- Build 2 meal variations (Variation A: Mon/Wed/Fri/Sun, Variation B: Tue/Thu/Sat), each with breakfast, lunch, dinner
-- Every lunch and dinner must include a Vitamin C source paired with the iron-rich food
-- Eggs should NOT be in the same meal as the primary iron source (eggs reduce iron absorption by up to 28%)
-- Dairy should only appear at breakfast, separated from iron-heavy meals
-- Chicken liver should appear at least once across both variations (highest iron density) unless the user dislikes it
-- Each meal must include 2-3 practical food alternatives for flexibility
-- Alternatives should reflect common South Asian / Middle Eastern pantry staples where possible (rice, chapati, dhal, chicken, beef)
-- Meals should be realistic and simple to prepare — not more than 3-4 main ingredients
-- Make sure total macros across the day match the target closely
-- Do not include any lemon-based dressings (user has acidity issues) — use tomatoes, orange, or bell pepper as Vit C sources instead
-- Return ONLY the JSON object, nothing else`;
+MANDATORY MEAL RULES — follow precisely:
+1. EXACTLY 3 meals per variation: breakfast (~8-9am), lunch (~1-2pm), dinner (~7-7:30pm). Not 2. Not 4. Exactly 3.
+2. Dinner must be lighter on carbs than lunch
+3. Eggs only at breakfast — NEVER at lunch or dinner (eggs block iron absorption)
+4. Dairy only at breakfast — NEVER at lunch or dinner (calcium blocks iron)
+5. Lunch is the primary iron meal — must contain red meat, liver, or dark poultry with Vitamin C source
+6. Dinner must also contain iron-rich protein with Vitamin C source
+7. Chicken liver in at least ONE meal across both variations — it is the highest iron food available
+8. Add haldi (turmeric) + black pepper to lunch and dinner — reduces inflammation that traps iron
+9. South Asian / Middle Eastern foods preferred: keema, chapati, dal, rice, lamb, chicken, beef
+10. No lemon in any meal — user has acidity. Use tomatoes, bell peppers, orange as Vit C instead
+11. Each meal needs 2-3 realistic alternatives for common ingredients
+12. Soak all legumes overnight — mention this in descriptions
+
+MACRO TARGETS:
+- Breakfast: ~${Math.round(macros.kcal * 0.27)} kcal
+- Lunch: ~${Math.round(macros.kcal * 0.40)} kcal  
+- Dinner: ~${Math.round(macros.kcal * 0.33)} kcal
+- Daily total must be within 50 kcal of ${macros.kcal}
+
+Return ONLY the JSON object. No markdown. No explanation. No code fences.`;
 }
 
 // ============================================================
@@ -924,8 +1003,11 @@ function renderPlan(plan, macros) {
     document.getElementById('suppCallout').style.display = 'block';
     document.getElementById('suppCallout').innerHTML = `
       <div class="supp-callout">
-        <div class="supp-callout-title">💊 Supplement timing</div>
+        <div class="supp-callout-title">💊 Supplement & morning protocol</div>
         <div class="supp-callout-text">${plan.supplement_advice}</div>
+        <div class="supp-callout-text" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);">
+          🌅 <strong>Every morning:</strong> 5 soaked almonds + 1 walnut before breakfast. Add beetroot, carrot, or pomegranate as a small side. Include haldi + black pepper in lunch and dinner cooking.
+        </div>
       </div>`;
   }
 
@@ -937,12 +1019,17 @@ function renderPlan(plan, macros) {
 
   // Rules
   const rulesEl = document.getElementById('rulesSection');
-  let rulesHtml = '<div class="rules-title">Iron absorption rules</div>';
+  let rulesHtml = '<div class="rules-title">Iron absorption rules</div><div class="rules-grid-inner">';
   plan.absorption_rules.forEach(r => {
-    rulesHtml += `<div class="rule-row"><span class="rule-icon">${r.type === 'do' ? '✓' : '✗'}</span><span>${r.text}</span></div>`;
+    const isDo = r.type === 'do';
+    rulesHtml += `<div class="rule-row ${isDo ? 'rule-do' : 'rule-dont'}">
+      <span class="rule-icon">${isDo ? '✓' : '✗'}</span>
+      <span>${r.text}</span>
+    </div>`;
   });
+  rulesHtml += '</div>';
   if (plan.conditions_note) {
-    rulesHtml += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--warning);line-height:1.6;">⚠️ ${plan.conditions_note}</div>`;
+    rulesHtml += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--color-border-tertiary);font-size:13px;color:var(--warning);line-height:1.6;">⚠️ ${plan.conditions_note}</div>`;
   }
   rulesEl.innerHTML = rulesHtml;
 
