@@ -93,6 +93,10 @@
   .screen-title em { font-style: italic; color: var(--rust); }
   .screen-subtitle { font-size: 14px; color: var(--mid-gray); line-height: 1.6; margin-top: 4px; }
 
+  .unit-toggle { display:flex; border:1.5px solid var(--border); border-radius:8px; overflow:hidden; }
+  .unit-btn { padding:4px 12px; font-size:12px; font-weight:500; font-family:'DM Sans',sans-serif; border:none; background:transparent; color:var(--mid-gray); cursor:pointer; transition:all 0.15s; }
+  .unit-btn.active { background:var(--rust); color:white; }
+
   /* ---- FORM ELEMENTS ---- */
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field label { font-size: 13px; font-weight: 500; color: var(--charcoal); }
@@ -392,14 +396,43 @@
         </select>
       </div>
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Height (cm)</label>
-        <input type="number" id="f_height" placeholder="165" min="140" max="200" />
+    <!-- Height with unit toggle -->
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="margin:0;">Height</label>
+        <div class="unit-toggle" id="height-unit-toggle">
+          <button class="unit-btn active" id="btn-height-cm" onclick="setHeightUnit('cm')">cm</button>
+          <button class="unit-btn" id="btn-height-ft" onclick="setHeightUnit('ft')">ft / in</button>
+        </div>
       </div>
-      <div class="field">
-        <label>Weight (kg)</label>
-        <input type="number" id="f_weight" placeholder="70" min="40" max="150" />
+      <div id="height-cm-input">
+        <input type="number" id="f_height_cm" placeholder="165" min="140" max="200" />
+      </div>
+      <div id="height-ft-input" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input type="number" id="f_height_ft" placeholder="5" min="4" max="7" />
+          <input type="number" id="f_height_in" placeholder="5" min="0" max="11" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+          <div class="field-hint" style="text-align:center;">feet</div>
+          <div class="field-hint" style="text-align:center;">inches</div>
+        </div>
+      </div>
+    </div>
+    <!-- Weight with unit toggle -->
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="margin:0;">Weight</label>
+        <div class="unit-toggle" id="weight-unit-toggle">
+          <button class="unit-btn active" id="btn-weight-kg" onclick="setWeightUnit('kg')">kg</button>
+          <button class="unit-btn" id="btn-weight-lbs" onclick="setWeightUnit('lbs')">lbs</button>
+        </div>
+      </div>
+      <div id="weight-kg-input">
+        <input type="number" id="f_weight_kg" placeholder="70" min="40" max="200" />
+      </div>
+      <div id="weight-lbs-input" style="display:none;">
+        <input type="number" id="f_weight_lbs" placeholder="154" min="88" max="440" />
       </div>
     </div>
     <div class="field">
@@ -490,6 +523,12 @@
         <div class="toggle-sub">Calcium blocks iron absorption — timing matters</div>
       </div>
       <button class="toggle-switch" id="toggle-calcium" onclick="toggleSwitch('calcium')"></button>
+    </div>
+    <div class="supp-expand" id="calcium-supp-expand">
+      <div class="field" style="margin-top:8px;">
+        <label>Calcium supplement name (optional)</label>
+        <input type="text" id="f_calcium_supp" placeholder="e.g. Caltrate, Calcium Citrate, D-Cal" />
+      </div>
     </div>
 
     <div class="toggle-row">
@@ -584,16 +623,50 @@
 const state = {
   step: 1,
   name: '', age: 0, height: 0, weight: 0, goal: '', activity: 1.375,
+  heightUnit: 'cm', weightUnit: 'kg',
   disliked: new Set(),
   allergens: new Set(),
   ironSupp: false, ironSuppName: '',
-  calcium: false, antacid: false, veg: false,
+  calcium: false, calciumName: '',
+  antacid: false, veg: false,
   conditions: new Set(),
   plan: null,
   activeVariation: 0
 };
 
 const toggles = { iron: false, calcium: false, antacid: false, veg: false };
+
+// Unit conversion helpers
+function setHeightUnit(unit) {
+  state.heightUnit = unit;
+  document.getElementById('height-cm-input').style.display = unit === 'cm' ? 'block' : 'none';
+  document.getElementById('height-ft-input').style.display = unit === 'ft' ? 'block' : 'none';
+  document.getElementById('btn-height-cm').classList.toggle('active', unit === 'cm');
+  document.getElementById('btn-height-ft').classList.toggle('active', unit === 'ft');
+}
+function setWeightUnit(unit) {
+  state.weightUnit = unit;
+  document.getElementById('weight-kg-input').style.display = unit === 'kg' ? 'block' : 'none';
+  document.getElementById('weight-lbs-input').style.display = unit === 'lbs' ? 'block' : 'none';
+  document.getElementById('btn-weight-kg').classList.toggle('active', unit === 'kg');
+  document.getElementById('btn-weight-lbs').classList.toggle('active', unit === 'lbs');
+}
+function getHeightCm() {
+  if (state.heightUnit === 'cm') {
+    return parseFloat(document.getElementById('f_height_cm').value) || 0;
+  } else {
+    const ft = parseFloat(document.getElementById('f_height_ft').value) || 0;
+    const inc = parseFloat(document.getElementById('f_height_in').value) || 0;
+    return Math.round((ft * 30.48) + (inc * 2.54));
+  }
+}
+function getWeightKg() {
+  if (state.weightUnit === 'kg') {
+    return parseFloat(document.getElementById('f_weight_kg').value) || 0;
+  } else {
+    return Math.round((parseFloat(document.getElementById('f_weight_lbs').value) || 0) * 0.453592);
+  }
+}
 
 // ============================================================
 // FOOD CHIP DATA
@@ -695,16 +768,16 @@ function goBack(target) { showScreen(target); }
 function goStep2() {
   const name = document.getElementById('f_name').value.trim();
   const age = parseInt(document.getElementById('f_age').value);
-  const height = parseInt(document.getElementById('f_height').value);
-  const weight = parseInt(document.getElementById('f_weight').value);
+  const height = getHeightCm();
+  const weight = getWeightKg();
   const goal = document.getElementById('f_goal').value;
   const activity = parseFloat(document.getElementById('f_activity').value);
   const err = document.getElementById('step1-error');
 
   if (!name) { err.textContent = 'Please enter your name.'; err.style.display='block'; return; }
   if (!age || age < 16 || age > 65) { err.textContent = 'Please enter a valid age (16–65).'; err.style.display='block'; return; }
-  if (!height || height < 140 || height > 200) { err.textContent = 'Please enter a valid height in cm (140–200).'; err.style.display='block'; return; }
-  if (!weight || weight < 40 || weight > 150) { err.textContent = 'Please enter a valid weight in kg (40–150).'; err.style.display='block'; return; }
+  if (!height || height < 140 || height > 220) { err.textContent = 'Please enter a valid height (4\'7" – 7\'2" / 140–220cm).'; err.style.display='block'; return; }
+  if (!weight || weight < 35 || weight > 200) { err.textContent = 'Please enter a valid weight (77–440 lbs / 35–200kg).'; err.style.display='block'; return; }
   if (!goal) { err.textContent = 'Please select your goal.'; err.style.display='block'; return; }
   if (!activity) { err.textContent = 'Please select your activity level.'; err.style.display='block'; return; }
 
@@ -724,31 +797,55 @@ function toggleSwitch(key) {
   if (key === 'iron') {
     document.getElementById('iron-supp-expand').classList.toggle('visible', toggles[key]);
   }
+  if (key === 'calcium') {
+    document.getElementById('calcium-supp-expand').classList.toggle('visible', toggles[key]);
+  }
 }
 
 // ============================================================
 // MACRO CALCULATOR
 // ============================================================
 function calcMacros() {
-  const { age, height, weight, goal, activity } = state;
+  const { age, height, weight, goal, activity, conditions } = state;
+
   // Mifflin-St Jeor BMR for women
   const bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-  // TDEE using user-selected activity multiplier
   const tdee = Math.round(bmr * (activity || 1.375));
-  // Calorie target based on goal
+
+  // Base calorie target
   let kcal;
   if (goal === 'loss') kcal = Math.max(1200, tdee - 600);
   else if (goal === 'gain') kcal = tdee + 250;
   else kcal = tdee;
+
+  // CONDITION ADJUSTMENTS
+  const hasPCOS = conditions.has('PCOS');
+  const hasDiabetes = conditions.has('Diabetes');
+  const hasPregnancy = conditions.has('Pregnancy');
+  const hasPostpartum = conditions.has('Postpartum');
+  const hasKidney = conditions.has('Kidney disease');
+  const hasCeliac = conditions.has('Celiac disease');
+
+  // Pregnancy adds ~350 kcal (ACOG), postpartum ~200 kcal
+  if (hasPregnancy) kcal += 350;
+  if (hasPostpartum) kcal += 200;
   kcal = Math.round(kcal);
-  // Protein: 1.8g/kg for loss (preserve muscle), 2.0g/kg for gain, 1.6 maintenance. Cap 180g.
-  const proteinPerKg = goal === 'gain' ? 2.0 : goal === 'loss' ? 1.8 : 1.6;
+
+  // Kidney disease: 0.8g/kg protein (damaged kidneys cannot process excess)
+  // Standard: 1.8g/kg loss, 2.0g/kg gain, 1.6g/kg maintenance
+  const proteinPerKg = hasKidney ? 0.8 : goal === 'gain' ? 2.0 : goal === 'loss' ? 1.8 : 1.6;
   const protein = Math.min(180, Math.round(weight * proteinPerKg));
-  // Fat: 28% of calories
-  const fat = Math.round(kcal * 0.28 / 9);
-  // Carbs: remainder, minimum 80g
-  const carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
-  return { kcal, protein, fat, carbs };
+
+  // Fat: 20% of calories (AMDR lower bound)
+  const fat = Math.round(kcal * 0.20 / 9);
+
+  // Carbs: remainder, min 80g
+  let carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
+
+  // PCOS / Diabetes: reduce carbs 20% (insulin resistance — lower glycaemic load)
+  if (hasPCOS || hasDiabetes) carbs = Math.max(80, Math.round(carbs * 0.80));
+
+  return { kcal, protein, fat, carbs, hasPCOS, hasDiabetes, hasPregnancy, hasPostpartum, hasKidney, hasCeliac };
 }
 
 // ============================================================
@@ -759,6 +856,7 @@ async function generatePlan() {
   state.ironSupp = toggles.iron;
   state.ironSuppName = document.getElementById('f_iron_supp').value.trim();
   state.calcium = toggles.calcium;
+  state.calciumName = document.getElementById('f_calcium_supp').value.trim();
   state.antacid = toggles.antacid;
   state.veg = toggles.veg;
 
@@ -964,6 +1062,7 @@ function buildPrompt(macros) {
   const conditionsList = state.conditions.size > 0 ? Array.from(state.conditions).join(', ') : 'None';
   const goalMap = { loss: 'weight loss', maintenance: 'weight maintenance', gain: 'muscle gain' };
   const suppName = state.ironSuppName || 'iron supplement';
+  const calciumName = state.calciumName || 'calcium supplement';
 
   const activityLabels = {
     '1.2': 'Sedentary (desk job, little exercise)',
@@ -972,6 +1071,28 @@ function buildPrompt(macros) {
     '1.725': 'Very active (6–7 days/week exercise)'
   };
   const activityLabel = activityLabels[String(state.activity)] || 'Lightly active';
+
+  // Build condition-specific dietary rules
+  let conditionRules = '';
+  if (macros.hasPCOS) conditionRules += `\nPCOS RULES: Reduce glycaemic load — no white rice, no white bread, favour complex carbs only. Increase fibre. Prefer low-GI foods like lentils, chickpeas, brown rice, oats.`;
+  if (macros.hasDiabetes) conditionRules += `\nDIABETES RULES: Strictly low glycaemic index meals. No sugar, no refined carbs. Spread carbs evenly across meals. Flag: consult doctor before dietary changes.`;
+  if (macros.hasCeliac) conditionRules += `\nCELIAC RULES: ALL meals must be completely gluten-free. No wheat, barley, rye, oats (unless certified GF). Use rice, quinoa, potatoes, certified GF alternatives only.`;
+  if (macros.hasPregnancy) conditionRules += `\nPREGNANCY RULES: Add 350 kcal to targets. Increase folate-rich foods (lentils, leafy greens). No raw fish, no unpasteurised dairy. Flag: consult OB/GYN.`;
+  if (macros.hasPostpartum) conditionRules += `\nPOSTPARTUM RULES: Add 200 kcal. Prioritise iron + B12 for recovery. Omega-3 rich foods beneficial.`;
+  if (macros.hasKidney) conditionRules += `\nKIDNEY DISEASE RULES: CRITICAL — protein strictly limited to 0.8g/kg. Avoid high-potassium foods (bananas, tomatoes in large quantities, potatoes). Low phosphorus. MUST flag: consult nephrologist before following this plan.`;
+
+  // Build supplement timing rules
+  let suppRules = '';
+  if (state.ironSupp) suppRules += `\nIRON SUPPLEMENT (${suppName}): Must advise taking on waking, empty stomach, with 150ml orange juice, wait 45-60 min before breakfast. This is the single most important timing rule.`;
+  if (state.calcium) suppRules += `\nCALCIUM SUPPLEMENT (${calciumName}): Must advise taking at bedtime ONLY — never within 3 hours of any iron-rich meal. Calcium is the only nutrient that blocks BOTH heme and non-heme iron.`;
+  if (state.antacid) suppRules += `\nANTACIDS/PPIs: Must flag prominently — reduces stomach acid which severely impairs iron absorption. Take iron supplement at least 2 hours before antacid dose.`;
+
+  // Build disliked foods conflict resolution
+  const dislikedArr = Array.from(state.disliked);
+  const liverDisliked = dislikedArr.some(f => f.toLowerCase().includes('liver'));
+  const liverRule = liverDisliked
+    ? 'User dislikes chicken liver — DO NOT include it. Use lamb, beef mince, or dark chicken thigh as the highest-iron alternative instead.'
+    : 'Chicken liver MUST appear in at least one lunch across both variations (highest iron food available).';
 
   return `Create a personalised iron-rich diet plan for this woman:
 
@@ -983,37 +1104,34 @@ PROFILE:
 - Activity level: ${activityLabel}
 - Daily targets: ${macros.kcal} kcal / ${macros.protein}g protein / ${macros.carbs}g carbs / ${macros.fat}g fat
 
-FOODS TO AVOID (disliked — never include): ${dislikedList}
-ALLERGENS (never include under any circumstance): ${allergenList}
-DIET TYPE: ${state.veg ? 'Vegetarian/Vegan — plant-based iron sources only' : 'Omnivore — include red meat and poultry'}
-
-SUPPLEMENTS & MEDICATIONS:
-- Iron supplement: ${state.ironSupp ? `YES — takes ${suppName}. Supplement advice must be: take on waking, empty stomach, with 150ml orange juice, wait 45-60 min before breakfast` : 'No iron supplement'}
-- Calcium supplement: ${state.calcium ? 'YES — must note: take at bedtime, separated from all iron meals by 3+ hours' : 'No'}
-- Antacids/PPIs: ${state.antacid ? 'YES — must flag: reduces stomach acid impairing iron absorption. Take iron 2 hours before antacid.' : 'No'}
+FOODS TO AVOID — disliked (NEVER include in meals OR alternatives): ${dislikedList}
+ALLERGENS — (NEVER include anywhere, not even as alternatives): ${allergenList}
+DIET TYPE: ${state.veg ? 'Vegetarian/Vegan — plant-based iron sources ONLY' : 'Omnivore — include red meat and poultry'}
+${conditionRules}
+${suppRules}
 
 MEDICAL CONDITIONS: ${conditionsList}
 
-MANDATORY MEAL RULES — follow precisely:
-1. EXACTLY 3 meals per variation: breakfast (~8-9am), lunch (~1-2pm), dinner (~7-7:30pm). Not 2. Not 4. Exactly 3.
-2. Dinner must be lighter on carbs than lunch — max 25g carbs at dinner
-3. Eggs only at breakfast — NEVER at lunch or dinner (eggs block iron absorption by 28%)
-4. Dairy only at breakfast — NEVER at lunch or dinner (calcium blocks iron)
-5. Lunch is the primary iron meal — must contain red meat, liver, or dark poultry with Vitamin C source
-6. Dinner must also contain iron-rich protein with Vitamin C source but kept simple and light
-7. Chicken liver in at least ONE lunch meal across both variations — NEVER at dinner (too heavy)
-8. Add haldi (turmeric) + black pepper to lunch and dinner — reduces inflammation that traps iron
-9. South Asian / Middle Eastern foods preferred: keema, chapati, dal, rice, lamb, chicken, beef
-10. NEVER use lemon in any meal — user has acidity problems. Use ONLY tomatoes, bell peppers, or orange as Vit C
-11. Each meal needs 2-3 realistic alternatives for common ingredients
-12. Soak all legumes overnight — mention this in descriptions
-13. No cream, no heavy sauces — keep cooking simple with minimal oil (1 tsp max)
+MANDATORY MEAL RULES:
+1. EXACTLY 3 meals: breakfast (~8-9am), lunch (~1-2pm), dinner (~7-7:30pm)
+2. Dinner max 25g carbs — lighter than lunch
+3. Eggs ONLY at breakfast — NEVER lunch/dinner (blocks iron absorption 28%)
+4. Dairy ONLY at breakfast — NEVER lunch/dinner (calcium blocks iron)
+5. Lunch = primary iron meal with red meat, liver, or dark poultry + Vitamin C
+6. Dinner = iron-rich protein + Vitamin C, light and simple
+7. ${liverRule}
+8. Haldi (turmeric) + black pepper in EVERY lunch and dinner
+9. South Asian / Middle Eastern staples preferred: keema, chapati, dal, rice, lamb, chicken, beef
+10. NEVER use lemon — user has acidity. Use tomatoes, bell peppers, or orange as Vit C only
+11. 2-3 alternatives per meal — NEVER suggest disliked foods or allergens in alternatives either
+12. Soak all legumes overnight — state this in descriptions
+13. No cream, no heavy sauces, max 1 tsp oil
 
-STRICT CALORIE TARGETS PER MEAL — must stay within 30 kcal of these:
-- Breakfast: exactly ${Math.round(macros.kcal * 0.26)} kcal
-- Lunch: exactly ${Math.round(macros.kcal * 0.40)} kcal
-- Dinner: exactly ${Math.round(macros.kcal * 0.34)} kcal
-- Daily total must be within 30 kcal of ${macros.kcal}
+CALORIE TARGETS PER MEAL:
+- Breakfast: ${Math.round(macros.kcal * 0.26)} kcal
+- Lunch: ${Math.round(macros.kcal * 0.40)} kcal
+- Dinner: ${Math.round(macros.kcal * 0.34)} kcal
+- Total: ${macros.kcal} kcal (within 30 kcal)
 
 Return ONLY the JSON object. No markdown. No explanation. No code fences.`;
 }
@@ -1071,9 +1189,21 @@ function renderPlan(plan, macros) {
   rulesEl.innerHTML = rulesHtml;
 
   // Actions
+  const allergenConfirm = state.allergens.size > 0
+    ? `<div style="background:var(--danger-light);border:1px solid #FFCDD2;border-radius:var(--radius-md);padding:12px 14px;font-size:13px;color:var(--danger);line-height:1.6;">
+        <strong>⚠️ Allergen check:</strong> This plan was generated excluding: <strong>${Array.from(state.allergens).join(', ')}</strong>. Please verify no excluded items appear before following this plan. If you spot any, regenerate.
+       </div>`
+    : '';
+  const dislikedConfirm = state.disliked.size > 0
+    ? `<div style="background:var(--warning-light);border:1px solid #F0C040;border-radius:var(--radius-md);padding:12px 14px;font-size:13px;color:var(--warning);line-height:1.6;">
+        <strong>Foods excluded:</strong> ${Array.from(state.disliked).join(', ')}
+       </div>`
+    : '';
+
   document.getElementById('planActions').innerHTML = `
     <div class="saved-indicator"><div class="saved-dot"></div> Plan saved to your device</div>
-    <button class="btn-secondary" style="margin-top:4px;font-size:13px;padding:10px;" onclick="clearAndRestart()">Clear plan & start over</button>`;
+    ${allergenConfirm}
+    ${dislikedConfirm}`;
 }
 
 function renderVariation(idx) {
@@ -1157,19 +1287,20 @@ function showSavedPlans() {
 function loadSavedPlan(idx) {
   const saved = getSavedPlans();
   const p = saved[idx];
-  // Restore all scalar state explicitly
   state.name = p.user.name || '';
   state.age = p.user.age || 0;
   state.height = p.user.height || 0;
   state.weight = p.user.weight || 0;
   state.goal = p.user.goal || '';
   state.activity = p.user.activity || 1.375;
+  state.heightUnit = p.user.heightUnit || 'cm';
+  state.weightUnit = p.user.weightUnit || 'kg';
   state.ironSupp = p.user.ironSupp || false;
   state.ironSuppName = p.user.ironSuppName || '';
   state.calcium = p.user.calcium || false;
+  state.calciumName = p.user.calciumName || '';
   state.antacid = p.user.antacid || false;
   state.veg = p.user.veg || false;
-  // Restore Sets from arrays (Sets don't survive JSON serialisation)
   state.disliked = new Set(Array.isArray(p.user.disliked) ? p.user.disliked : []);
   state.allergens = new Set(Array.isArray(p.user.allergens) ? p.user.allergens : []);
   state.conditions = new Set(Array.isArray(p.user.conditions) ? p.user.conditions : []);
@@ -1184,17 +1315,24 @@ function clearAndRestart() {
   // Reset all state
   state.name = ''; state.age = 0; state.height = 0; state.weight = 0;
   state.goal = ''; state.activity = 1.375;
+  state.heightUnit = 'cm'; state.weightUnit = 'kg';
   state.disliked = new Set();
   state.allergens = new Set();
   state.conditions = new Set();
   state.ironSupp = false; state.ironSuppName = '';
-  state.calcium = false; state.antacid = false; state.veg = false;
+  state.calcium = false; state.calciumName = '';
+  state.antacid = false; state.veg = false;
   state.plan = null;
   // Reset toggles
   toggles.iron = false; toggles.calcium = false; toggles.antacid = false; toggles.veg = false;
   document.querySelectorAll('.toggle-switch').forEach(t => t.classList.remove('on'));
   document.getElementById('iron-supp-expand').classList.remove('visible');
+  document.getElementById('calcium-supp-expand').classList.remove('visible');
   document.getElementById('f_iron_supp').value = '';
+  document.getElementById('f_calcium_supp').value = '';
+  // Reset unit toggles
+  setHeightUnit('cm');
+  setWeightUnit('kg');
   // Reinitialise chips
   renderChips('chips-proteins', foodChips.proteins, 'disliked');
   renderChips('chips-carbs', foodChips.carbs, 'disliked');
@@ -1203,7 +1341,10 @@ function clearAndRestart() {
   renderChips('chips-allergens', allergenChips, 'allergens', true);
   renderChips('chips-conditions', conditionChips, 'conditions');
   // Reset form fields
-  ['f_name','f_age','f_height','f_weight'].forEach(id => document.getElementById(id).value = '');
+  ['f_name','f_age','f_height_cm','f_height_ft','f_height_in','f_weight_kg','f_weight_lbs'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   document.getElementById('f_goal').value = '';
   document.getElementById('f_activity').value = '';
   document.getElementById('step1-error').style.display = 'none';
