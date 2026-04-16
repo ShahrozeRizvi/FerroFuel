@@ -674,7 +674,7 @@ function getWeightKg() {
 const foodChips = {
   proteins: ['Beef','Lamb','Chicken liver','Chicken breast','Chicken thigh','Fish','Tuna','Sardines','Eggs','Egg whites','Tofu','Tempeh'],
   carbs: ['Brown rice','White rice','Oats','Chapati','Multigrain bread','White bread','Quinoa','Lentils','Chickpeas','Beans'],
-  veg: ['Spinach','Broccoli','Bell pepper','Tomatoes','Kale','Courgette','Carrots','Kiwi','Orange','Strawberries','Banana'],
+  veg: ['Spinach','Broccoli','Bell pepper','Tomatoes','Kale','Courgette','Carrots','Kiwi','Orange','Lemon','Strawberries','Banana'],
   dairy: ['Yoghurt','Greek yoghurt','Milk','Cheese']
 };
 
@@ -831,19 +831,24 @@ function calcMacros() {
   if (hasPostpartum) kcal += 200;
   kcal = Math.round(kcal);
 
-  // Protein targets (dynamic per body weight):
-  // Weight loss: 1.2g/kg — sufficient for muscle preservation in deficit (clinical standard)
-  // Maintenance: 1.4g/kg — adequate for body composition maintenance
-  // Muscle gain: 1.8g/kg — supports hypertrophy (ISSN guideline)
-  // Kidney disease: 0.8g/kg — damaged kidneys cannot process excess protein
-  const proteinPerKg = hasKidney ? 0.8 : goal === 'gain' ? 1.8 : goal === 'loss' ? 1.2 : 1.4;
-  const protein = Math.min(180, Math.round(weight * proteinPerKg));
+  // MACRO SPLIT (% of total calories — balanced for women's health):
+  // Protein: 28% loss / 25% maintenance / 30% gain
+  // Fat: 27% across all goals (supports hormonal health, satiety, iron absorption)
+  // Carbs: remainder (target 40-50% of calories)
+  // Kidney disease overrides protein to 0.8g/kg (cannot process excess)
+  let protein, fat, carbs;
 
-  // Fat: 20% of calories (AMDR lower bound)
-  const fat = Math.round(kcal * 0.20 / 9);
-
-  // Carbs: remainder, min 80g
-  let carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  if (hasKidney) {
+    // Kidney: protein strictly limited, fat 27%, carbs fill rest
+    protein = Math.round(weight * 0.8);
+    fat = Math.round(kcal * 0.27 / 9);
+    carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  } else {
+    const proteinPct = goal === 'gain' ? 0.30 : goal === 'loss' ? 0.28 : 0.25;
+    protein = Math.min(180, Math.round((kcal * proteinPct) / 4));
+    fat = Math.round(kcal * 0.27 / 9);
+    carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  }
 
   // PCOS / Diabetes: reduce carbs 20% (insulin resistance — lower glycaemic load)
   if (hasPCOS || hasDiabetes) carbs = Math.max(80, Math.round(carbs * 0.80));
@@ -978,7 +983,6 @@ SAFETY RULES — NEVER VIOLATE:
 6. If vegetarian/vegan: use only plant-based iron sources, pair ALL with Vitamin C, note lower bioavailability
 7. Always flag medical conditions with specific dietary cautions
 8. Never diagnose — phrase as dietary guidance only
-9. NEVER use lemon or lemon juice anywhere in the plan — user has acidity problems. Hard rule.
 
 CRITICAL OUTPUT RULES:
 - Each variation MUST have EXACTLY 3 meals: breakfast, lunch, dinner — never 2, never 4
@@ -1139,11 +1143,10 @@ MANDATORY MEAL RULES:
 8. ${liverRule}
 9. Haldi (turmeric) + black pepper in EVERY lunch and dinner
 10. South Asian / Middle Eastern staples preferred: keema, chapati, dal, rice, lamb, chicken, beef
-11. NEVER use lemon — user has acidity. Use tomatoes, bell peppers, or orange as Vit C only
-12. 2-3 alternatives per meal — NEVER suggest disliked foods or allergens in alternatives either
-13. Soak all legumes overnight — state this in descriptions
-14. No cream, no heavy sauces, max 1 tsp oil per meal
-15. Per-meal protein must be realistic (20–40g max per meal) — never force 50g+ into one meal
+11. 2-3 alternatives per meal — NEVER suggest disliked foods or allergens in alternatives either
+12. Soak all legumes overnight — state this in descriptions
+13. No cream, no heavy sauces, max 1 tsp oil per meal
+14. Per-meal protein must be realistic (20–40g max per meal) — never force 50g+ into one meal
 
 CALORIE TARGETS PER MEAL (split: 28% breakfast / 38% lunch / 10% snack / 24% dinner):
 - Breakfast: ${Math.round(macros.kcal * 0.28)} kcal
