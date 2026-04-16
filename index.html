@@ -857,8 +857,10 @@ function init() {
 function checkSavedPlans() {
   const saved = getSavedPlans();
   const wrap = document.getElementById('savedPlansBtnWrap');
-  if (saved.length > 0) {
-    wrap.innerHTML = `<button class="btn-secondary" onclick="startOnboarding()">View my saved plan →</button>`;
+  if (wrap) {
+    wrap.innerHTML = saved.length > 0
+      ? `<button class="btn-secondary" onclick="startOnboarding()">View my saved plan →</button>`
+      : '';
   }
 }
 
@@ -1589,6 +1591,7 @@ function checkAdminPin() {
 
 function adminClearAll() {
   localStorage.removeItem('ferrofuel_plans');
+  checkSavedPlans();
   document.getElementById('adminStats').style.display = 'block';
   document.getElementById('adminStats').textContent = '✓ All saved plans cleared.';
 }
