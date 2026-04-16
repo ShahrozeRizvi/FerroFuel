@@ -831,9 +831,12 @@ function calcMacros() {
   if (hasPostpartum) kcal += 200;
   kcal = Math.round(kcal);
 
-  // Kidney disease: 0.8g/kg protein (damaged kidneys cannot process excess)
-  // Standard: 1.8g/kg loss, 2.0g/kg gain, 1.6g/kg maintenance
-  const proteinPerKg = hasKidney ? 0.8 : goal === 'gain' ? 2.0 : goal === 'loss' ? 1.8 : 1.6;
+  // Protein targets (dynamic per body weight):
+  // Weight loss: 1.2g/kg — sufficient for muscle preservation in deficit (clinical standard)
+  // Maintenance: 1.4g/kg — adequate for body composition maintenance
+  // Muscle gain: 1.8g/kg — supports hypertrophy (ISSN guideline)
+  // Kidney disease: 0.8g/kg — damaged kidneys cannot process excess protein
+  const proteinPerKg = hasKidney ? 0.8 : goal === 'gain' ? 1.8 : goal === 'loss' ? 1.2 : 1.4;
   const protein = Math.min(180, Math.round(weight * proteinPerKg));
 
   // Fat: 20% of calories (AMDR lower bound)
@@ -908,8 +911,8 @@ async function generatePlan() {
       throw new Error('Plan missing variations. Please try again.');
     }
     plan.variations.forEach((v, i) => {
-      if (!v.meals || v.meals.length < 3) {
-        throw new Error(`Variation ${i + 1} has only ${v.meals ? v.meals.length : 0} meals. Expected 3. Please try again.`);
+      if (!v.meals || v.meals.length < 4) {
+        throw new Error(`Variation ${i + 1} has only ${v.meals ? v.meals.length : 0} meals. Expected 4 (breakfast, lunch, snack, dinner). Please try again.`);
       }
     });
     if (!plan.absorption_rules || plan.absorption_rules.length < 4) {
@@ -999,7 +1002,7 @@ OUTPUT STRUCTURE — follow exactly:
           "kcal": 380,
           "title": "Meal name",
           "description": "Detailed portion sizes and simple preparation instructions",
-          "macros": { "p": 30, "c": 42, "f": 9 },
+          "macros": { "p": 25, "c": 40, "f": 10 },
           "hasHemeIron": false,
           "hasVitC": true,
           "alternatives": [
@@ -1012,8 +1015,21 @@ OUTPUT STRUCTURE — follow exactly:
           "kcal": 610,
           "title": "Meal name",
           "description": "Detailed portion sizes and preparation",
-          "macros": { "p": 42, "c": 55, "f": 14 },
+          "macros": { "p": 35, "c": 55, "f": 12 },
           "hasHemeIron": true,
+          "hasVitC": true,
+          "alternatives": [
+            { "item": "Food name", "alt": "alternatives" }
+          ]
+        },
+        {
+          "type": "snack",
+          "time": "4–5pm",
+          "kcal": 150,
+          "title": "Snack name",
+          "description": "Simple iron-supporting snack with Vitamin C",
+          "macros": { "p": 8, "c": 18, "f": 4 },
+          "hasHemeIron": false,
           "hasVitC": true,
           "alternatives": [
             { "item": "Food name", "alt": "alternatives" }
@@ -1022,10 +1038,10 @@ OUTPUT STRUCTURE — follow exactly:
         {
           "type": "dinner",
           "time": "7–7:30pm",
-          "kcal": 460,
+          "kcal": 400,
           "title": "Meal name",
           "description": "Detailed portion sizes and preparation. Keep carbs lighter at dinner.",
-          "macros": { "p": 44, "c": 20, "f": 14 },
+          "macros": { "p": 32, "c": 20, "f": 12 },
           "hasHemeIron": true,
           "hasVitC": true,
           "alternatives": [
@@ -1033,13 +1049,13 @@ OUTPUT STRUCTURE — follow exactly:
           ]
         }
       ],
-      "totals": { "kcal": 1450, "p": 101, "c": 117, "f": 37 }
+      "totals": { "kcal": 1540, "p": 100, "c": 133, "f": 38 }
     },
     {
       "label": "Variation B",
       "days": "Tue / Thu / Sat",
-      "meals": [ ... same 3 meal structure ... ],
-      "totals": { "kcal": 1450, "p": 100, "c": 130, "f": 38 }
+      "meals": [ ... same 4 meal structure with breakfast, lunch, snack, dinner ... ],
+      "totals": { "kcal": 1540, "p": 100, "c": 133, "f": 38 }
     }
   ],
   "absorption_rules": [
@@ -1113,24 +1129,27 @@ ${suppRules}
 MEDICAL CONDITIONS: ${conditionsList}
 
 MANDATORY MEAL RULES:
-1. EXACTLY 3 meals: breakfast (~8-9am), lunch (~1-2pm), dinner (~7-7:30pm)
+1. EXACTLY 4 meals per variation: breakfast (~8-9am), lunch (~1-2pm), snack (~4-5pm), dinner (~7-7:30pm)
 2. Dinner max 25g carbs — lighter than lunch
-3. Eggs ONLY at breakfast — NEVER lunch/dinner (blocks iron absorption 28%)
-4. Dairy ONLY at breakfast — NEVER lunch/dinner (calcium blocks iron)
+3. Eggs ONLY at breakfast — NEVER lunch/snack/dinner (blocks iron absorption 28%)
+4. Dairy ONLY at breakfast — NEVER lunch/snack/dinner (calcium blocks iron)
 5. Lunch = primary iron meal with red meat, liver, or dark poultry + Vitamin C
-6. Dinner = iron-rich protein + Vitamin C, light and simple
-7. ${liverRule}
-8. Haldi (turmeric) + black pepper in EVERY lunch and dinner
-9. South Asian / Middle Eastern staples preferred: keema, chapati, dal, rice, lamb, chicken, beef
-10. NEVER use lemon — user has acidity. Use tomatoes, bell peppers, or orange as Vit C only
-11. 2-3 alternatives per meal — NEVER suggest disliked foods or allergens in alternatives either
-12. Soak all legumes overnight — state this in descriptions
-13. No cream, no heavy sauces, max 1 tsp oil
+6. Snack = simple iron-supporting food with Vitamin C — roasted chana, seeds, fruit, nuts. Keep under 200 kcal.
+7. Dinner = iron-rich protein + Vitamin C, light and simple, low carb
+8. ${liverRule}
+9. Haldi (turmeric) + black pepper in EVERY lunch and dinner
+10. South Asian / Middle Eastern staples preferred: keema, chapati, dal, rice, lamb, chicken, beef
+11. NEVER use lemon — user has acidity. Use tomatoes, bell peppers, or orange as Vit C only
+12. 2-3 alternatives per meal — NEVER suggest disliked foods or allergens in alternatives either
+13. Soak all legumes overnight — state this in descriptions
+14. No cream, no heavy sauces, max 1 tsp oil per meal
+15. Per-meal protein must be realistic (20–40g max per meal) — never force 50g+ into one meal
 
-CALORIE TARGETS PER MEAL:
-- Breakfast: ${Math.round(macros.kcal * 0.26)} kcal
-- Lunch: ${Math.round(macros.kcal * 0.40)} kcal
-- Dinner: ${Math.round(macros.kcal * 0.34)} kcal
+CALORIE TARGETS PER MEAL (split: 28% breakfast / 38% lunch / 10% snack / 24% dinner):
+- Breakfast: ${Math.round(macros.kcal * 0.28)} kcal
+- Lunch: ${Math.round(macros.kcal * 0.38)} kcal
+- Snack: ${Math.round(macros.kcal * 0.10)} kcal
+- Dinner: ${Math.round(macros.kcal * 0.24)} kcal
 - Total: ${macros.kcal} kcal (within 30 kcal)
 
 Return ONLY the JSON object. No markdown. No explanation. No code fences.`;
