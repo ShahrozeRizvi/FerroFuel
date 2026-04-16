@@ -301,6 +301,59 @@
   /* ---- SCROLL ---- */
   .screen { overflow-y: auto; }
 
+  /* ---- BOTTOM NAV ---- */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 520px;
+    background: var(--warm-white); border-top: 1px solid var(--border);
+    display: flex; z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    flex: 1; padding: 10px 0 8px; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; background: none; border: none;
+    cursor: pointer; transition: color 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .nav-btn-icon { font-size: 20px; line-height: 1; }
+  .nav-btn-label { font-size: 10px; font-weight: 500; letter-spacing: 0.04em; color: var(--mid-gray); }
+  .nav-btn.active .nav-btn-label { color: var(--rust); }
+  .nav-btn.active .nav-btn-icon { filter: none; }
+
+  /* ---- ABOUT SCREEN ---- */
+  .about-hero { background: var(--rust); border-radius: var(--radius-lg); padding: 24px; color: white; text-align: center; margin-bottom: 20px; }
+  .about-logo { font-size: 36px; margin-bottom: 8px; }
+  .about-name { font-family: 'DM Serif Display', serif; font-size: 26px; margin-bottom: 4px; }
+  .about-version { font-size: 12px; opacity: 0.7; }
+  .about-section { margin-bottom: 20px; }
+  .about-section-title { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid-gray); margin-bottom: 10px; }
+  .about-card { background: var(--warm-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 8px; }
+  .about-card-title { font-size: 14px; font-weight: 500; color: var(--charcoal); margin-bottom: 4px; }
+  .about-card-text { font-size: 13px; color: var(--mid-gray); line-height: 1.6; }
+  .about-disclaimer { background: var(--danger-light); border: 1px solid #FFCDD2; border-radius: var(--radius-md); padding: 16px; font-size: 13px; color: #8B0000; line-height: 1.7; }
+
+  /* ---- BETA BANNER ---- */
+  .beta-banner { background: var(--warning-light); border: 1px solid #F0C040; border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; color: var(--warning); line-height: 1.6; display: flex; gap: 10px; align-items: flex-start; }
+  .beta-banner-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ---- ADMIN SCREEN ---- */
+  .admin-screen { display: none; position: fixed; inset: 0; background: var(--charcoal); z-index: 999; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+  .admin-screen.visible { display: flex; }
+  .admin-card { background: var(--warm-white); border-radius: var(--radius-xl); padding: 32px 28px; width: 100%; max-width: 380px; }
+  .admin-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--charcoal); margin-bottom: 6px; }
+  .admin-sub { font-size: 13px; color: var(--mid-gray); margin-bottom: 24px; }
+  .admin-pin { display: flex; gap: 10px; margin-bottom: 16px; }
+  .admin-pin input { flex: 1; padding: 14px; font-size: 22px; letter-spacing: 8px; text-align: center; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-family: 'DM Sans', sans-serif; outline: none; }
+  .admin-pin input:focus { border-color: var(--rust); }
+  .admin-error { font-size: 13px; color: var(--danger); margin-bottom: 12px; display: none; }
+  .admin-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; display: none; }
+  .admin-actions.visible { display: flex; }
+  .admin-action-btn { padding: 12px; background: var(--danger-light); color: var(--danger); border: 1px solid #FFCDD2; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: left; }
+  .admin-action-btn:hover { background: #FFCDD2; }
+  .admin-close { position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+
+  /* ---- SCROLL PADDING for bottom nav ---- */
+  .screen { padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
+
   /* ---- SAVED PLANS SCREEN ---- */
   .saved-plan-card { background: var(--warm-white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: border-color 0.15s; }
   .saved-plan-card:hover { border-color: var(--rust-mid); }
@@ -614,6 +667,91 @@
     <div id="savedPlansList"></div>
   </div>
 
+  <!-- SCREEN: ABOUT -->
+  <div class="screen" id="screen-about">
+    <div class="about-hero">
+      <div class="about-logo">🩸</div>
+      <div class="about-name">FerroFuel</div>
+      <div class="about-version">Beta v1.0 · Iron-Rich Diet Planner for Women</div>
+    </div>
+
+    <div class="about-section">
+      <div class="about-section-title">What this app does</div>
+      <div class="about-card">
+        <div class="about-card-text">FerroFuel builds a personalised, iron-rich diet plan based on your body measurements, health goals, food preferences, allergens, and supplement routine. Every meal is engineered around iron <em>absorption</em> — not just iron content — using established nutritional science.</div>
+      </div>
+    </div>
+
+    <div class="about-section">
+      <div class="about-section-title">How your plan is calculated</div>
+      <div class="about-card">
+        <div class="about-card-title">Calorie target — Mifflin-St Jeor (1990)</div>
+        <div class="about-card-text">BMR is calculated using the Mifflin-St Jeor equation, the most validated formula for women. Your activity level multiplier (1.2–1.725) is then applied to get your TDEE. Goal adjustments: −600 kcal for weight loss, +250 kcal for muscle gain.</div>
+      </div>
+      <div class="about-card">
+        <div class="about-card-title">Macro split — AMDR guidelines</div>
+        <div class="about-card-text">Protein: 28% of calories for weight loss / 25% maintenance / 30% muscle gain. Fat: 27% (supports hormonal health and iron absorption). Carbohydrates: remaining calories, minimum 80g. PCOS/Diabetes: carbs reduced 20% for lower glycaemic load.</div>
+      </div>
+      <div class="about-card">
+        <div class="about-card-title">Iron absorption science</div>
+        <div class="about-card-text">Heme iron (red meat, liver, dark poultry) absorbs at ~25% vs 5–17% for plant sources. Every iron-heavy meal is paired with Vitamin C to convert ferric to ferrous iron. Eggs, dairy, tea, and calcium are separated from iron meals. Turmeric and black pepper are included to reduce inflammation that traps iron in cells.</div>
+      </div>
+      <div class="about-card">
+        <div class="about-card-title">Condition-based adjustments</div>
+        <div class="about-card-text">PCOS and Diabetes: lower glycaemic carb targets. Pregnancy: +350 kcal. Postpartum: +200 kcal. Kidney disease: protein restricted to 0.8g/kg. Celiac: gluten-free foods only.</div>
+      </div>
+      <div class="about-card">
+        <div class="about-card-title">Meal structure</div>
+        <div class="about-card-text">4 meals daily: breakfast (28%) / lunch (38%) / snack (10%) / dinner (24%). This distributes protein across 20–40g per meal — the physiologically effective range for muscle protein synthesis — and prevents the hunger that causes diet failure.</div>
+      </div>
+    </div>
+
+    <div class="about-section">
+      <div class="about-section-title">References</div>
+      <div class="about-card">
+        <div class="about-card-text">Mifflin MD et al. (1990) Am J Clin Nutr · AMDR: Institute of Medicine (2005) · Iron absorption: Hallberg L et al., Zijp IM et al. (2000) · Protein synthesis: Trommelen J et al. (2023) · PCOS nutrition: Barrea L et al. (2021) · Supplement timing: Moretti D et al. (2015)</div>
+      </div>
+    </div>
+
+    <div class="about-disclaimer">
+      ⚠️ <strong>Medical disclaimer</strong><br>
+      FerroFuel is a beta dietary guidance tool. It is not a medical device, clinical service, or substitute for professional advice. Plans are generated by AI and may not account for your complete health picture. Always review any diet plan with your doctor or a registered dietitian before following it — especially if you have medical conditions, take medications, or are pregnant. Results vary by individual.
+    </div>
+
+    <div style="height:16px;"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-btn active" id="nav-home" onclick="navTo('home')">
+      <span class="nav-btn-icon">🏠</span>
+      <span class="nav-btn-label">HOME</span>
+    </button>
+    <button class="nav-btn" id="nav-about" onclick="navTo('about')">
+      <span class="nav-btn-icon">ℹ️</span>
+      <span class="nav-btn-label">ABOUT</span>
+    </button>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="admin-screen" id="adminScreen">
+    <button class="admin-close" onclick="closeAdmin()">✕</button>
+    <div class="admin-card">
+      <div class="admin-title">Admin panel</div>
+      <div class="admin-sub">Enter PIN to access data controls</div>
+      <div class="admin-pin">
+        <input type="password" id="adminPinInput" maxlength="4" placeholder="••••" oninput="checkAdminPin()" />
+      </div>
+      <div class="admin-error" id="adminError">Incorrect PIN</div>
+      <div class="admin-actions" id="adminActions">
+        <div style="font-size:13px;font-weight:500;color:var(--charcoal);margin-bottom:4px;">Data controls</div>
+        <button class="admin-action-btn" onclick="adminClearAll()">🗑 Clear all saved plans on this device</button>
+        <button class="admin-action-btn" onclick="adminViewStats()">📊 View usage stats</button>
+        <div id="adminStats" style="font-size:13px;color:var(--mid-gray);line-height:1.6;margin-top:8px;display:none;"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -698,9 +836,7 @@ function checkSavedPlans() {
   const saved = getSavedPlans();
   const wrap = document.getElementById('savedPlansBtnWrap');
   if (saved.length > 0) {
-    wrap.innerHTML = `
-      <button class="btn-secondary" onclick="startOnboarding()">View my saved plan →</button>
-      <button class="btn-back" style="align-self:center;font-size:13px;color:var(--mid-gray);" onclick="clearAndRestart()">✕ Clear saved plan & start fresh</button>`;
+    wrap.innerHTML = `<button class="btn-secondary" onclick="startOnboarding()">View my saved plan →</button>`;
   }
 }
 
@@ -1175,18 +1311,22 @@ function renderPlan(plan, macros) {
       <div class="plan-macro"><div class="plan-macro-val">${macros.fat}g</div><div class="plan-macro-label">fats</div></div>
     </div>`;
 
-  // Supplement callout
-  if (plan.supplement_advice) {
-    document.getElementById('suppCallout').style.display = 'block';
-    document.getElementById('suppCallout').innerHTML = `
-      <div class="supp-callout">
-        <div class="supp-callout-title">💊 Supplement & morning protocol</div>
-        <div class="supp-callout-text">${plan.supplement_advice}</div>
-        <div class="supp-callout-text" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);">
-          🌅 <strong>Every morning:</strong> 5 soaked almonds + 1 walnut before breakfast. Add beetroot, carrot, or pomegranate as a small side. Include haldi + black pepper in lunch and dinner cooking.
-        </div>
-      </div>`;
-  }
+  // Beta banner
+  document.getElementById('suppCallout').style.display = 'block';
+  const existingSupp = plan.supplement_advice ? `
+    <div class="supp-callout">
+      <div class="supp-callout-title">💊 Supplement & morning protocol</div>
+      <div class="supp-callout-text">${plan.supplement_advice}</div>
+      <div class="supp-callout-text" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);">
+        🌅 <strong>Every morning:</strong> 5 soaked almonds + 1 walnut before breakfast. Add beetroot, carrot, or pomegranate as a small side. Include haldi + black pepper in lunch and dinner cooking.
+      </div>
+    </div>` : '';
+  document.getElementById('suppCallout').innerHTML = `
+    <div class="beta-banner">
+      <span class="beta-banner-icon">🧪</span>
+      <span><strong>Beta tool:</strong> This plan is AI-generated guidance. Portions and meals are calculated using clinical nutrition formulas but are not a substitute for a registered dietitian or doctor. Review with a healthcare professional before making significant dietary changes.</span>
+    </div>
+    ${existingSupp}`;
 
   // Variation day labels
   document.getElementById('varDaysA').textContent = plan.variations[0].days;
@@ -1225,8 +1365,7 @@ function renderPlan(plan, macros) {
   document.getElementById('planActions').innerHTML = `
     <div class="saved-indicator"><div class="saved-dot"></div> Plan saved to your device</div>
     ${allergenConfirm}
-    ${dislikedConfirm}`;
-}
+    ${dislikedConfirm}`;}
 
 function renderVariation(idx) {
   state.activeVariation = idx;
@@ -1373,6 +1512,83 @@ function clearAndRestart() {
   checkSavedPlans();
   showScreen('screen-step1');
 }
+
+// ============================================================
+// BOTTOM NAV
+// ============================================================
+function navTo(tab) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + tab).classList.add('active');
+  if (tab === 'home') {
+    const saved = getSavedPlans();
+    if (saved.length > 0) {
+      loadSavedPlan(saved.length - 1);
+    } else {
+      showScreen('screen-welcome');
+    }
+  } else if (tab === 'about') {
+    showScreen('screen-about');
+  }
+}
+
+// ============================================================
+// ADMIN PANEL
+// ============================================================
+const ADMIN_PIN = '7749'; // Change this PIN before sharing
+
+function checkAdminHash() {
+  if (window.location.hash === '#admin') {
+    document.getElementById('adminScreen').classList.add('visible');
+    window.location.hash = '';
+  }
+}
+
+function closeAdmin() {
+  document.getElementById('adminScreen').classList.remove('visible');
+  document.getElementById('adminPinInput').value = '';
+  document.getElementById('adminError').style.display = 'none';
+  document.getElementById('adminActions').classList.remove('visible');
+  document.getElementById('adminStats').style.display = 'none';
+}
+
+function checkAdminPin() {
+  const val = document.getElementById('adminPinInput').value;
+  if (val.length === 4) {
+    if (val === ADMIN_PIN) {
+      document.getElementById('adminError').style.display = 'none';
+      document.getElementById('adminActions').classList.add('visible');
+    } else {
+      document.getElementById('adminError').style.display = 'block';
+      document.getElementById('adminActions').classList.remove('visible');
+      setTimeout(() => { document.getElementById('adminPinInput').value = ''; }, 600);
+    }
+  }
+}
+
+function adminClearAll() {
+  localStorage.removeItem('ferrofuel_plans');
+  document.getElementById('adminStats').style.display = 'block';
+  document.getElementById('adminStats').textContent = '✓ All saved plans cleared.';
+}
+
+function adminViewStats() {
+  const saved = getSavedPlans();
+  const statsEl = document.getElementById('adminStats');
+  statsEl.style.display = 'block';
+  if (saved.length === 0) {
+    statsEl.textContent = 'No saved plans on this device.';
+  } else {
+    const goals = saved.map(p => p.user.goal || 'unknown');
+    const goalCounts = goals.reduce((a, g) => { a[g] = (a[g]||0)+1; return a; }, {});
+    statsEl.innerHTML = `Plans saved: ${saved.length}<br>
+      Loss: ${goalCounts.loss||0} · Maintenance: ${goalCounts.maintenance||0} · Gain: ${goalCounts.gain||0}<br>
+      Latest: ${saved[saved.length-1].date || 'unknown'}`;
+  }
+}
+
+// Listen for hash change
+window.addEventListener('hashchange', checkAdminHash);
+window.addEventListener('load', checkAdminHash);
 
 // ============================================================
 // BOOT
